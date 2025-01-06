@@ -11,12 +11,17 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
 @SpringBootApplication(scanBasePackages = "com.hubis.acs")
 public class DemoApplication implements CommandLineRunner {
+
+	private static final String LOG_DIR = "C:/logs";
 
 	@Autowired
 	AlgorithmService algorithmService;
@@ -25,7 +30,21 @@ public class DemoApplication implements CommandLineRunner {
 	TransferService transferService;
 
 	public static void main(String[] args) {
+		// 로그 디렉토리 생성
+		createLogDirectories();
+		System.setProperty("java.awt.headless", "false");
 		SpringApplication.run(DemoApplication.class, args);
+	}
+
+	private static void createLogDirectories() {
+		try {
+			Files.createDirectories(Paths.get(LOG_DIR));
+			Files.createDirectories(Paths.get(LOG_DIR + "/archive/app"));
+			Files.createDirectories(Paths.get(LOG_DIR + "/archive/boot"));
+			Files.createDirectories(Paths.get(LOG_DIR + "/archive/error"));
+		} catch (IOException e) {
+			System.err.println("Failed to create log directories: " + e.getMessage());
+		}
 	}
 
 	@Override

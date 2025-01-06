@@ -17,8 +17,23 @@ public class AgentPathCache {
     private static final Logger logger = LoggerFactory.getLogger(AgentPathCache.class);
 
     private static final AgentPathCache instance = new AgentPathCache();
-    private final Map<String, List<Node>> agentLocalPaths = new ConcurrentHashMap<>();
+    private final Map<String, CacheEntry> agentLocalPaths = new ConcurrentHashMap<>();
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private static final long CACHE_EXPIRY_TIME = 60000; // 60초
+
+    private static class CacheEntry {
+        List<Node> path;
+        long timestamp;
+        
+        CacheEntry(List<Node> path) {
+            this.path = path;
+            this.timestamp = System.currentTimeMillis();
+        }
+        
+        boolean isExpired() {
+            return System.currentTimeMillis() - timestamp > CACHE_EXPIRY_TIME;
+        }
+    }
 
     private AgentPathCache() {}
 
@@ -32,7 +47,7 @@ public class AgentPathCache {
         lock.writeLock().lock();
         try {
             if (!localPath.isEmpty()) {
-                agentLocalPaths.put(agentName, new ArrayList<>(localPath));
+                agentLocalPaths.put(agentName, new CacheEntry(new ArrayList<>(localPath)));
             }
         } finally {
             lock.writeLock().unlock();
@@ -44,8 +59,11 @@ public class AgentPathCache {
 
         lock.readLock().lock();
         try {
-            List<Node> path = agentLocalPaths.get(agentName);
-            return path != null ? new ArrayList<>(path) : new ArrayList<>();
+            CacheEntry entry = agentLocalPaths.get(agentName);
+            if (entry != null && !entry.isExpired()) {
+                return new ArrayList<>(entry.path);
+            }
+            return new ArrayList<>();
         } finally {
             lock.readLock().unlock();
         }
@@ -55,9 +73,9 @@ public class AgentPathCache {
         lock.readLock().lock();
         try {
             Map<String, List<Node>> paths = new HashMap<>();
-            for (Map.Entry<String, List<Node>> entry : agentLocalPaths.entrySet()) {
+            for (Map.Entry<String, CacheEntry> entry : agentLocalPaths.entrySet()) {
                 if (entry.getKey() != null && entry.getValue() != null) {
-                    paths.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+                    paths.put(entry.getKey(), new ArrayList<>(entry.getValue().path));
                 }
             }
             return paths;
@@ -71,8 +89,12 @@ public class AgentPathCache {
 
         lock.readLock().lock();
         try {
-            List<Node> path = agentLocalPaths.get(agentName);
-            return path != null && !path.isEmpty() ? path.get(0) : null;
+            CacheEntry entry = agentLocalPaths.get(agentName);
+            if (entry != null && !entry.isExpired()) {
+                List<Node> path = entry.path;
+                return path != null && !path.isEmpty() ? path.get(0) : null;
+            }
+            return null;
         } finally {
             lock.readLock().unlock();
         }
@@ -85,10 +107,10 @@ public class AgentPathCache {
 
         lock.readLock().lock();
         try {
-            for (Map.Entry<String, List<Node>> entry : agentLocalPaths.entrySet()) {
+            for (Map.Entry<String, CacheEntry> entry : agentLocalPaths.entrySet()) {
                 if (entry.getKey() == null || entry.getKey().equals(agentName)) continue;
 
-                List<Node> otherPath = entry.getValue();
+                List<Node> otherPath = entry.getValue().path;
                 if (otherPath == null || otherPath.isEmpty()) continue;
 
                 // 다른 에이전트의 현재 위치와 계획된 경로 간의 충돌 검사
@@ -128,10 +150,10 @@ public class AgentPathCache {
 
         lock.writeLock().lock();
         try {
-            List<Node> currentPath = agentLocalPaths.get(agentName);
-            if (currentPath != null && currentPath.size() > 1) {
-                currentPath.remove(0);
-                agentLocalPaths.put(agentName, new ArrayList<>(currentPath));
+            CacheEntry entry = agentLocalPaths.get(agentName);
+            if (entry != null && entry.path != null && entry.path.size() > 1) {
+                entry.path.remove(0);
+                agentLocalPaths.put(agentName, new CacheEntry(new ArrayList<>(entry.path)));
             }
         } catch (Exception e) {
             // 예외 발생 시 로그 기록
