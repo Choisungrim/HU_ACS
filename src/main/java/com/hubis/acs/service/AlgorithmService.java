@@ -6,5 +6,5 @@ import java.util.List;
 
 public interface AlgorithmService {
 
-    public List<Node> findGlobalPath(int startX, int startY, int goalX, int goalY, boolean[][] grid);
+    public List<Node> aStarSearch(int startX, int startY, int endX, int endY, boolean[][] grid);
 }

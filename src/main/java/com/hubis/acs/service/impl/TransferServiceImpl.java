@@ -4,10 +4,12 @@ import com.hubis.acs.configuration.AgentRunnable;
 import com.hubis.acs.repository.GlobalPathFinder;
 import com.hubis.acs.repository.LocalPathPlanner;
 import com.hubis.acs.repository.Node;
+import com.hubis.acs.service.AlgorithmService;
 import com.hubis.acs.service.TransferService;
 import com.hubis.acs.visualize.AgentPathVisualizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.swing.*;
@@ -25,6 +27,9 @@ public class TransferServiceImpl implements TransferService {
     private static Timer visualizationTimer;  // 정적 변수로 타이머 선언
     private static List<List<Node>> sharedGlobalPaths;  // 공유 전역 경로 추가
 
+    @Autowired
+    AlgorithmService algorithmService;
+
     public void pathFinding(int agentCount) {
         // 기존 창이 있면 닫기
         if (visualizerFrame != null) {
@@ -35,7 +40,7 @@ public class TransferServiceImpl implements TransferService {
         }
 
         boolean[][] grid = new boolean[30][30];
-        GlobalPathFinder globalPathFinder = new GlobalPathFinder();
+        GlobalPathFinder globalPathFinder = new GlobalPathFinder(algorithmService);
 
         List<Thread> agentThreads = new ArrayList<>();
         List<List<Node>> agentGlobalPaths = new ArrayList<>();
@@ -93,7 +98,7 @@ public class TransferServiceImpl implements TransferService {
             sharedGlobalPaths.set(i, new ArrayList<>(globalPath));
 
             // 로컬 경로 플래너 생성
-            LocalPathPlanner localPathPlanner = new LocalPathPlanner(grid);
+            LocalPathPlanner localPathPlanner = new LocalPathPlanner(grid, algorithmService);
 
             // 현재 에이전트의 경로를 다른 에이전트의 경로와 함께 전달
             AgentRunnable agentRunnable = new AgentRunnable(

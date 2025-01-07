@@ -1,0 +1,43 @@
+@startuml
+class AppConfig {
+    @Bean 
+    +restTemplate(): RestTemplate
+}
+class AlgorithmServiceImpl <<AlgorithmService>> {
+    -isValid(x: int, y: int, grid: boolean[][]): boolean
+    -calculateHeuristic(x1: int, y1: int, x2: int, y2: int): int
+    +aStarSearch(startX: int, startY: int, endX: int, endY: int, grid: boolean[][]): List<Node>
+    -reconstructPath(node: Node): List<Node>
+}
+class TransferServiceImpl <<TransferService>> {
+    -Logger logger
+    -JFrame visualizerFrame
+    -AgentPathVisualizer visualizer
+    -Timer visualizationTimer
+    -List sharedGlobalPaths
+    ~AlgorithmService algorithmService
+    -getOtherAgentPaths(positions: List<Node>, currentIndex: int): List<Node>
+    +pathFinding(agentCount: int): void
+}
+interface EnhancedConfiguration {
+}
+interface AlgorithmService {
+    +aStarSearch(int, int, int, int, boolean[][]): List<Node>
+}
+interface TransferService {
+    +pathFinding(int): void
+}
+interface AlgorithmService {
+    +aStarSearch(int, int, int, int, boolean[][]): List<Node>
+}
+interface TransferService {
+    +pathFinding(int): void
+}
+AlgorithmServiceImpl ..|> AlgorithmService : implements
+AlgorithmServiceImpl ..> Node : uses
+AlgorithmServiceImpl ..> Node : uses
+AlgorithmServiceImpl ..> Node : uses
+TransferServiceImpl ..|> TransferService : implements
+TransferServiceImpl --> AgentPathVisualizer : has
+TransferServiceImpl --> AlgorithmService : has
+@enduml

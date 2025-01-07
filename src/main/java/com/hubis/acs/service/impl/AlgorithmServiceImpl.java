@@ -9,77 +9,81 @@ import java.util.*;
 @Service
 public class AlgorithmServiceImpl implements AlgorithmService {
 
-    public List<Node> findGlobalPath(int startX, int startY, int goalX, int goalY, boolean[][] grid) {
-        PriorityQueue<Node> openList = new PriorityQueue<>(Comparator.comparingInt(n -> n.f));
-        Set<Node> closedList = new HashSet<>();
+    public List<Node> aStarSearch(int startX, int startY, int endX, int endY, boolean[][] grid) {
+        // A* 알고리즘 최적화
+        PriorityQueue<Node> openSet = new PriorityQueue<>((a, b) -> a.f - b.f);
+        Set<String> closedSet = new HashSet<>();
+        Map<String, Node> nodeMap = new HashMap<>();
 
         Node startNode = new Node(startX, startY, null);
-        openList.add(startNode);
+        startNode.g = 0;
+        startNode.h = calculateHeuristic(startX, startY, endX, endY);
+        startNode.f = startNode.g + startNode.h;
 
-        while (!openList.isEmpty()) {
-            Node currentNode = openList.poll();
+        openSet.offer(startNode);
+        nodeMap.put(startX + "," + startY, startNode);
 
-            // 목표에 도달한 경우
-            if (currentNode.x == goalX && currentNode.y == goalY) {
-                return constructPath(currentNode);
+        while (!openSet.isEmpty()) {
+            Node current = openSet.poll();
+
+            if (current.x == endX && current.y == endY) {
+                return reconstructPath(current);
             }
 
-            closedList.add(currentNode);
+            String currentKey = current.x + "," + current.y;
+            closedSet.add(currentKey);
 
-            // 인접 노드 탐색
-            for (Node neighbor : getNeighbors(currentNode, grid)) {
-                if (closedList.contains(neighbor)) continue;
+            // 4방향 이동만 고려 (성능 최적화)
+            int[][] directions = {{0, 1}, {1, 0}, {0, -1}, {-1, 0}};
+            for (int[] dir : directions) {
+                int newX = current.x + dir[0];
+                int newY = current.y + dir[1];
 
-                // g, h, f 계산
-                neighbor.g = currentNode.g + 1; // 이동 비용
-                neighbor.h = calculateHeuristic(neighbor, goalX, goalY); // 휴리스틱 계산
-                neighbor.f = neighbor.g + neighbor.h;
-
-                // Open List에 이미 존재하는 경우
-                if (openList.contains(neighbor)) {
-                    // 기존의 f 값이 더 크면 업데이트
-                    for (Node node : openList) {
-                        if (node.x == neighbor.x && node.y == neighbor.y && node.f > neighbor.f) {
-                            openList.remove(node);
-                            openList.add(neighbor);
-                            break;
-                        }
+                if (isValid(newX, newY, grid)) {
+                    String neighborKey = newX + "," + newY;
+                    if (closedSet.contains(neighborKey)) {
+                        continue;
                     }
-                } else {
-                    openList.add(neighbor);
+
+                    int tentativeG = current.g + 1;
+                    Node neighbor = nodeMap.get(neighborKey);
+
+                    if (neighbor == null) {
+                        neighbor = new Node(newX, newY, current);
+                        neighbor.g = tentativeG;
+                        neighbor.h = calculateHeuristic(newX, newY, endX, endY);
+                        neighbor.f = neighbor.g + neighbor.h;
+                        openSet.offer(neighbor);
+                        nodeMap.put(neighborKey, neighbor);
+                    } else if (tentativeG < neighbor.g) {
+                        neighbor.parent = current;
+                        neighbor.g = tentativeG;
+                        neighbor.f = neighbor.g + neighbor.h;
+                        // PriorityQueue 재정렬을 위해 제거 후 다시 추가
+                        openSet.remove(neighbor);
+                        openSet.offer(neighbor);
+                    }
                 }
             }
         }
-        return Collections.emptyList(); // 경로를 찾지 못한 경우
+
+        return new ArrayList<>();
     }
 
-    private List<Node> constructPath(Node node) {
+    private int calculateHeuristic(int x1, int y1, int x2, int y2) {
+        return Math.abs(x1 - x2) + Math.abs(y1 - y2);
+    }
+
+    private boolean isValid(int x, int y, boolean[][] grid) {
+        return x >= 0 && x < grid.length && y >= 0 && y < grid[0].length && !grid[x][y];
+    }
+
+    private List<Node> reconstructPath(Node node) {
         List<Node> path = new ArrayList<>();
         while (node != null) {
-            path.add(node);
+            path.add(0, node);
             node = node.parent;
         }
-        Collections.reverse(path);
         return path;
-    }
-
-    private List<Node> getNeighbors(Node node, boolean[][] grid) {
-        List<Node> neighbors = new ArrayList<>();
-        int[][] directions = {{0, 1}, {1, 0}, {0, -1}, {-1, 0}}; // 상하좌우
-
-        for (int[] direction : directions) {
-            int newX = node.x + direction[0];
-            int newY = node.y + direction[1];
-
-            // 경계 체크
-            if (newX >= 0 && newX < grid.length && newY >= 0 && newY < grid[0].length && !grid[newX][newY]) {
-                neighbors.add(new Node(newX, newY, node)); // 부모 노드를 설정
-            }
-        }
-        return neighbors;
-    }
-
-    private int calculateHeuristic(Node node, int goalX, int goalY) {
-        return Math.abs(node.x - goalX) + Math.abs(node.y - goalY);
     }
 }

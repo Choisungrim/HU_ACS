@@ -1,5 +1,6 @@
 package com.hubis.acs.repository;
 
+import com.hubis.acs.service.AlgorithmService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,35 +16,29 @@ import java.util.Collections;
 
 public class LocalPathPlanner {
     private static final Logger logger = LoggerFactory.getLogger(LocalPathPlanner.class);
+
     private static final int MAX_WAIT_COUNT = 1;    // 기본 대기 횟수
-    private static final int LOOK_AHEAD = 2;        // 2칸 앞까지 체크
-    private static final int MAX_RETRY_COUNT = 3;   // 최대 재계산 횟수
-    private static final int MAX_STUCK_COUNT = 5;   // 최대 막힘 횟수
     private static final int STUCK_WAIT_TIME = 5000; // 5초 대기
-    private static final int EXTENDED_LOOK_AHEAD = 4;  // 확장된 탐색 범위
     private static final int MAX_DETOUR_DISTANCE = 5;  // 최대 우회 거리
     private static final int MAX_WAIT_ATTEMPTS = 3;  // 최대 대기 시도 횟수
-    private static final int FORCE_MOVE_AFTER_ATTEMPTS = 2; // 강제 이동 시도 전 대기 횟수
 
     private final Map<String, Integer> waitCount = new ConcurrentHashMap<>();
     private final Map<String, Integer> retryCount = new ConcurrentHashMap<>();
-    private final Map<String, List<Node>> occupiedPaths = new ConcurrentHashMap<>();
+
     private final boolean[][] grid;
+
     private final GlobalPathFinder globalPathFinder;
     private final Map<String, Set<String>> visitedPaths = new ConcurrentHashMap<>();
     private static final int PATH_MEMORY_LIMIT = 10;  // 최근 경로 기억 개수
-    private final Map<String, Node> initialPositions = new ConcurrentHashMap<>();  // 초기 위치 저장
     private final Map<String, Integer> stuckCount = new ConcurrentHashMap<>();      // 막힘 횟수 카운트
     private final Map<String, Long> stuckWaitStartTime = new ConcurrentHashMap<>(); // 대기 시작 시간 저장
     private final Map<String, Set<String>> cycleDetection = new ConcurrentHashMap<>(); // 순환 경로 감지용
-    private static final int CYCLE_MEMORY_LIMIT = 5;  // 순환 감지 기억 제한
     private final Map<String, List<Node>> previousPositions = new ConcurrentHashMap<>(); // 이전 위치 기록
-    private static final int POSITION_HISTORY_LIMIT = 10;  // 이전 위치 기억 제한
     private final Map<String, Integer> waitAttempts = new ConcurrentHashMap<>();  // 대기 시도 횟수 추적
 
-    public LocalPathPlanner(boolean[][] grid) {
+    public LocalPathPlanner(boolean[][] grid, AlgorithmService algorithmService) {
         this.grid = grid;
-        this.globalPathFinder = new GlobalPathFinder();
+        this.globalPathFinder = new GlobalPathFinder(algorithmService);
     }
 
     public List<Node> planLocalPath(List<Node> globalPath, List<Node> otherAgentPaths, 
@@ -191,14 +186,6 @@ public class LocalPathPlanner {
         return new ArrayList<>();  // 경로를 찾지 못한 경우
     }
 
-    private void updateOccupiedPath(String agentName, Node currentPosition) {
-        List<Node> previousPath = occupiedPaths.getOrDefault(agentName, new ArrayList<>());
-        previousPath.remove(currentPosition);
-        List<Node> newPath = new ArrayList<>();
-        newPath.add(currentPosition);
-        occupiedPaths.put(agentName, newPath);
-    }
-
     private List<Node> getNextSteps(List<Node> globalPath, Node currentPosition) {
         List<Node> nextSteps = new ArrayList<>();
         nextSteps.add(currentPosition);  // 현재 위치도 포함
@@ -319,37 +306,6 @@ public class LocalPathPlanner {
             calculateTurnPenalty(current.parent, current, dx, dy) : 0;
         
         return distanceToGoal + turnPenalty;
-    }
-
-    private List<Node> recalculateGlobalPath(Node current, Node destination, List<Node> otherAgentPaths, String agentName) {
-        int[][] offsets = {{-2, 0}, {2, 0}, {0, -2}, {0, 2}};
-        
-        for (int[] offset : offsets) {
-            int startX = current.x + offset[0];
-            int startY = current.y + offset[1];
-            
-            if (!isValidPosition(startX, startY)) continue;
-            
-            Node startNode = new Node(startX, startY, null);
-            // 이전에 시도했던 경로는 제외
-            if (isPathVisited(agentName, current, startNode)) continue;
-            
-            if (!detectCollision(Arrays.asList(startNode), otherAgentPaths)) {
-                List<Node> newPath = globalPathFinder.findGlobalPath(
-                    startX, startY, destination.x, destination.y, grid
-                );
-                
-                if (!newPath.isEmpty()) {
-                    List<Node> completePath = new ArrayList<>();
-                    completePath.add(current);
-                    completePath.addAll(newPath);
-                    // 시도한 경로 기록
-                    addVisitedPath(agentName, Arrays.asList(current, startNode));
-                    return completePath;
-                }
-            }
-        }
-        return new ArrayList<>();
     }
 
     private void resetAgentState(String agentName) {
@@ -635,20 +591,6 @@ public class LocalPathPlanner {
         return new ArrayList<>();
     }
 
-    private void addToPathMemory(String agentName, String pathKey) {
-        Set<String> agentPaths = cycleDetection.computeIfAbsent(agentName, k -> new HashSet<>());
-        agentPaths.add(pathKey);
-        
-        if (agentPaths.size() > CYCLE_MEMORY_LIMIT) {
-            agentPaths.clear();
-        }
-    }
-
-    private boolean isCyclicPath(String agentName, String pathKey) {
-        Set<String> agentPaths = cycleDetection.getOrDefault(agentName, new HashSet<>());
-        return agentPaths.contains(pathKey);
-    }
-
     private List<Node> findForcedPath(Node current, Node destination, List<Node> otherAgentPaths) {
         // 강제 경로 - 현재 위치에서 목적지까지 직선 경로로 시도
         List<Node> directPath = findStraightPath(current, destination);
@@ -686,16 +628,6 @@ public class LocalPathPlanner {
         return directPath;
     }
 
-    private int countCollisions(List<Node> path, List<Node> otherAgentPaths) {
-        int collisions = 0;
-        for (Node node : path) {
-            if (detectCollision(Arrays.asList(node), otherAgentPaths)) {
-                collisions++;
-            }
-        }
-        return collisions;
-    }
-
     private static class PathOption implements Comparable<PathOption> {
         List<Node> path;
         double score;
@@ -708,14 +640,6 @@ public class LocalPathPlanner {
         @Override
         public int compareTo(PathOption other) {
             return Double.compare(this.score, other.score);
-        }
-    }
-
-    private void updatePreviousPositions(String agentName, Node current) {
-        List<Node> positions = previousPositions.computeIfAbsent(agentName, k -> new ArrayList<>());
-        positions.add(current);
-        if (positions.size() > POSITION_HISTORY_LIMIT) {
-            positions.remove(0);
         }
     }
 
@@ -794,29 +718,6 @@ public class LocalPathPlanner {
         return new ArrayList<>();  // 안전한 대기 위치를 찾지 못한 경우
     }
 
-    private List<Node> findForcedDetour(Node current, Node destination, List<Node> otherAgentPaths) {
-        // 상하좌우 방향 정의 (목적지 방향 우선)
-        List<int[]> directions = getPrioritizedDirections(current, destination);
-        
-        // 각 방향으로 최대 거리까지 시도
-        for (int distance = 1; distance <= MAX_DETOUR_DISTANCE * 2; distance++) {  // 거리 범위 확대
-            for (int[] dir : directions) {
-                // 주 방향으로의 우회 시도
-                List<Node> detourPath = tryDetourInDirection(current, destination, otherAgentPaths, dir, distance);
-                if (!detourPath.isEmpty()) {
-                    return detourPath;
-                }
-
-                // 수직 방향으로의 우회 시도
-                List<Node> perpendicularPath = tryPerpendicularDetour(current, destination, otherAgentPaths, dir, distance);
-                if (!perpendicularPath.isEmpty()) {
-                    return perpendicularPath;
-                }
-            }
-        }
-        return new ArrayList<>();
-    }
-
     private List<int[]> getPrioritizedDirections(Node current, Node destination) {
         List<int[]> directions = new ArrayList<>();
         int dx = destination.x - current.x;
@@ -860,34 +761,6 @@ public class LocalPathPlanner {
         return new ArrayList<>();
     }
 
-    private List<Node> tryPerpendicularDetour(Node current, Node destination, 
-            List<Node> otherAgentPaths, int[] dir, int distance) {
-        // 수직 방향 계산
-        int[] perpDir = {dir[1], dir[0]};  // 90도 회전
-        
-        for (int perpDistance = 1; perpDistance <= distance; perpDistance++) {
-            int newX = current.x + (dir[0] * distance) + (perpDir[0] * perpDistance);
-            int newY = current.y + (dir[1] * distance) + (perpDir[1] * perpDistance);
-
-            if (!isValidPosition(newX, newY)) continue;
-
-            Node detourPoint = new Node(newX, newY, null);
-            List<Node> pathToDetour = findStraightPath(current, detourPoint);
-            
-            if (!pathToDetour.isEmpty() && !detectCollision(pathToDetour, otherAgentPaths)) {
-                List<Node> pathToDestination = findStraightPath(detourPoint, destination);
-                if (!pathToDestination.isEmpty()) {
-                    List<Node> completePath = new ArrayList<>();
-                    completePath.add(current);
-                    completePath.addAll(pathToDetour.subList(1, pathToDetour.size()));
-                    completePath.addAll(pathToDestination.subList(1, pathToDestination.size()));
-                    return completePath;
-                }
-            }
-        }
-        return new ArrayList<>();
-    }
-
     private List<Node> findStraightPath(Node start, Node end) {
         List<Node> path = new ArrayList<>();
         path.add(start);
@@ -908,89 +781,6 @@ public class LocalPathPlanner {
         }
 
         return path;
-    }
-
-    private List<Node> findAggressiveDetour(Node current, Node destination, 
-            List<Node> otherAgentPaths, String agentName) {
-        // 목적지까지의 직선 거리 계산
-        double directDistance = Math.sqrt(
-            Math.pow(destination.x - current.x, 2) + 
-            Math.pow(destination.y - current.y, 2)
-        );
-
-        // 우회 방향 결정 (목적지 반대 방향으로 우선 시도)
-        int dx = destination.x - current.x;
-        int dy = destination.y - current.y;
-        
-        // 우회 시도 방향들 (목적지 반대 방향 우선)
-        List<int[]> detourDirections = new ArrayList<>();
-        detourDirections.add(new int[]{-Integer.signum(dx), 0});  // X축 반대
-        detourDirections.add(new int[]{0, -Integer.signum(dy)});  // Y축 반대
-        detourDirections.add(new int[]{Integer.signum(dx), 0});   // X축
-        detourDirections.add(new int[]{0, Integer.signum(dy)});   // Y축
-
-        // 각 방향으로 더 긴 거리 시도
-        for (int distance = 2; distance <= MAX_DETOUR_DISTANCE * 2; distance++) {
-            for (int[] dir : detourDirections) {
-                int newX = current.x + (dir[0] * distance);
-                int newY = current.y + (dir[1] * distance);
-
-                if (!isValidPosition(newX, newY)) continue;
-
-                Node detourPoint = new Node(newX, newY, null);
-                List<Node> pathToDetour = findSafePath(current, detourPoint, otherAgentPaths);
-                
-                if (!pathToDetour.isEmpty()) {
-                    // 우회 지점에서 목적지까지 경로 확인
-                    List<Node> pathToDestination = findSafePath(detourPoint, destination, otherAgentPaths);
-                    if (!pathToDestination.isEmpty()) {
-                        List<Node> completePath = new ArrayList<>();
-                        completePath.add(current);
-                        completePath.addAll(pathToDetour.subList(1, pathToDetour.size()));
-                        completePath.addAll(pathToDestination.subList(1, pathToDestination.size()));
-                        return completePath;
-                    }
-                }
-            }
-        }
-        return new ArrayList<>();
-    }
-
-    private List<Node> findForcedMove(Node current, Node destination, List<Node> otherAgentPaths) {
-        // 상하좌우 방향만 사용
-        int[][] directions = {
-            {0, 1},   // 상
-            {1, 0},   // 우
-            {0, -1},  // 하
-            {-1, 0}   // 좌
-        };
-
-        // 목적지 방향 우선순위 계산
-        int dx = destination.x - current.x;
-        int dy = destination.y - current.y;
-        
-        // 방향 우선순위 정렬
-        List<int[]> prioritizedDirs = new ArrayList<>();
-        for (int[] dir : directions) {
-            int score = calculateDirectionScore(dir[0], dir[1], dx, dy);
-            prioritizedDirs.add(new int[]{dir[0], dir[1], score});
-        }
-        prioritizedDirs.sort((a, b) -> Integer.compare(b[2], a[2]));
-
-        // 각 방향으로 이동 시도
-        for (int[] dir : prioritizedDirs) {
-            int newX = current.x + dir[0];
-            int newY = current.y + dir[1];
-
-            if (!isValidPosition(newX, newY)) continue;
-
-            Node nextNode = new Node(newX, newY, current);
-            // 충돌이 있더라도 강제 이동
-            return Arrays.asList(current, nextNode);
-        }
-
-        // 이동할 수 없는 경우 현재 위치 유지
-        return Arrays.asList(current);
     }
 
     private int calculateDirectionScore(int dirX, int dirY, int targetDx, int targetDy) {
