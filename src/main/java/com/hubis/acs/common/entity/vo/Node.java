@@ -1,4 +1,4 @@
-package com.hubis.acs.entity;
+package com.hubis.acs.common.entity.vo;
 
 import lombok.Getter;
 import lombok.Setter;

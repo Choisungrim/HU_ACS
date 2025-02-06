@@ -1,4 +1,4 @@
-package com.hubis.acs.configuration;
+package com.hubis.acs.common.configuration;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

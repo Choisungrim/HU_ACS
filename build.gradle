@@ -32,9 +32,27 @@ repositories {
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-integration'
-	//implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: '3.3.6'
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: '3.3.6'
 	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '3.3.6'
+	implementation group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '3.4.1'
+	implementation 'org.springframework.boot:spring-boot-starter-integration'
+	implementation 'org.springframework.integration:spring-integration-mqtt'
+	implementation 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5'
+
+	//MD5 Crypto
+	implementation group: 'org.bouncycastle', name: 'bcprov-jdk18on', version: '1.78.1'
+	implementation group: 'org.bouncycastle', name: 'bcpkix-jdk18on', version: '1.78.1'
+
+	//JSONObject
+	implementation group: 'org.json', name: 'json', version: '20240303'
+
+	//Reflection
+	implementation 'org.reflections:reflections:0.9.10'
+
+	//ELK Log Collect
 	implementation 'net.logstash.logback:logstash-logback-encoder:7.4'
+
+	//umlgenerator
 	implementation 'com.umlgenerator:uml-generator:0.0.1'
 
 	compileOnly 'org.projectlombok:lombok'

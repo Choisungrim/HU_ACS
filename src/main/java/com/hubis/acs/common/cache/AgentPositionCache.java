@@ -1,4 +1,4 @@
-package com.hubis.acs.cache;
+package com.hubis.acs.common.cache;
 
 import com.hubis.acs.repository.Node;
 

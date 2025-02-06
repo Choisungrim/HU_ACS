@@ -53,10 +53,10 @@ public class DemoApplication implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
-		 UMLGenerator.generateProjectUML(context,
-		 		"com.hubis.acs",  // 프로젝트의 base package
-		 		"C:\\HUBIS\\ROBOTICS\\HU_ACS\\acs\\src\\main\\resources\\uml-diagram.puml"  // 출력 파일 경로
-		 );
+//		 UMLGenerator.generateProjectUML(context,
+//		 		"com.hubis.acs",  // 프로젝트의 base package
+//		 		"C:\\HUBIS\\ROBOTICS\\HU_ACS\\acs\\src\\main\\resources\\uml-diagram.puml"  // 출력 파일 경로
+//		 );
 
 		Scanner scanner = new Scanner(System.in);
 		while (true) {

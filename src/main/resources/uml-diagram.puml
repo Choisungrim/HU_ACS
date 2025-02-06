@@ -6,8 +6,8 @@ class AppConfig {
 class AlgorithmServiceImpl <<AlgorithmService>> {
     -isValid(x: int, y: int, grid: boolean[][]): boolean
     -calculateHeuristic(x1: int, y1: int, x2: int, y2: int): int
-    +aStarSearch(startX: int, startY: int, endX: int, endY: int, grid: boolean[][]): List<Node>
     -reconstructPath(node: Node): List<Node>
+    +aStarSearch(startX: int, startY: int, endX: int, endY: int, grid: boolean[][]): List<Node>
 }
 class TransferServiceImpl <<TransferService>> {
     -Logger logger
@@ -16,8 +16,8 @@ class TransferServiceImpl <<TransferService>> {
     -Timer visualizationTimer
     -List sharedGlobalPaths
     ~AlgorithmService algorithmService
-    -getOtherAgentPaths(positions: List<Node>, currentIndex: int): List<Node>
     +pathFinding(agentCount: int): void
+    -getOtherAgentPaths(positions: List<Node>, currentIndex: int): List<Node>
 }
 interface EnhancedConfiguration {
 }

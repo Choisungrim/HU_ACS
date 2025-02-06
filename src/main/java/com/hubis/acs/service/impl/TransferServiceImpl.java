@@ -1,6 +1,6 @@
 package com.hubis.acs.service.impl;
 
-import com.hubis.acs.configuration.AgentRunnable;
+import com.hubis.acs.common.configuration.AgentRunnable;
 import com.hubis.acs.repository.GlobalPathFinder;
 import com.hubis.acs.repository.LocalPathPlanner;
 import com.hubis.acs.repository.Node;

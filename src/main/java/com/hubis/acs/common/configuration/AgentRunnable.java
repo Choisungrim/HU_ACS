@@ -1,7 +1,7 @@
-package com.hubis.acs.configuration;
+package com.hubis.acs.common.configuration;
 
-import com.hubis.acs.cache.AgentPathCache;
-import com.hubis.acs.cache.AgentPositionCache;
+import com.hubis.acs.common.cache.AgentPathCache;
+import com.hubis.acs.common.cache.AgentPositionCache;
 import com.hubis.acs.repository.LocalPathPlanner;
 import com.hubis.acs.repository.Node;
 import org.slf4j.Logger;
