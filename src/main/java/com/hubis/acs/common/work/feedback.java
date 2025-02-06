@@ -12,6 +12,7 @@ public class feedback extends GlobalWorkHandler {
 
     @Override
     public String doWork(JSONObject message) throws Exception {
+
         publisher.publish("your/topicfeedback", "456");
         return result;
     }
