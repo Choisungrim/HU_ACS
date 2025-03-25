@@ -1,6 +1,7 @@
 package com.hubis.acs.repository.dao;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
@@ -14,7 +15,7 @@ import java.util.List;
 @Repository
 public class CommonDAO {
 
-    @Autowired
+    @PersistenceContext
     private EntityManager entityManager;
 
     // 단일 조회
@@ -35,6 +36,31 @@ public class CommonDAO {
             query.select(root);
         }
 
+        return entityManager.createQuery(query).getResultList();
+    }
+
+    public <T> List<T> selectList(Class<T> clazz, T example) {
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<T> query = cb.createQuery(clazz);
+        Root<T> root = query.from(clazz);
+
+        Predicate predicate = cb.conjunction(); // 기본적으로 AND 조건
+
+        // 객체의 필드 값을 동적으로 조회 조건으로 추가
+        for (java.lang.reflect.Field field : example.getClass().getDeclaredFields()) {
+            try {
+                field.setAccessible(true); // private 필드 접근 허용
+                Object value = field.get(example);
+
+                if (value != null) { // null이 아닌 경우만 필터 적용
+                    predicate = cb.and(predicate, cb.equal(root.get(field.getName()), value));
+                }
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException("Reflection 오류", e);
+            }
+        }
+
+        query.where(predicate);
         return entityManager.createQuery(query).getResultList();
     }
 

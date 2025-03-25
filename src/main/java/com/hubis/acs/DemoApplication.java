@@ -1,25 +1,24 @@
 package com.hubis.acs;
 
-import com.hubis.acs.repository.GlobalPathFinder;
-import com.hubis.acs.repository.LocalPathPlanner;
-import com.hubis.acs.repository.Node;
+import com.hubis.acs.common.configuration.customAnnotation.EnableAllprotocols;
+import com.hubis.acs.common.configuration.protocol.ProtocolConfig;
 import com.hubis.acs.service.AlgorithmService;
 import com.hubis.acs.service.TransferService;
-import com.umlgenerator.generator.UMLGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Scanner;
 
-@SpringBootApplication(scanBasePackages = "com.hubis.acs")
+@SpringBootApplication(scanBasePackages = "com.hubis.acs") // ✅ 전체 패키지를 포함하여 스캔
+@EnableTransactionManagement
+@EnableAllprotocols
 public class DemoApplication implements CommandLineRunner {
 
 	private static final String LOG_DIR = "C:/logs";
@@ -80,4 +79,5 @@ public class DemoApplication implements CommandLineRunner {
 		}
 		scanner.close();
 	}
+
 }
