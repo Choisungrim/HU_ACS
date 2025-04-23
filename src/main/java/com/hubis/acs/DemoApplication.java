@@ -9,6 +9,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import java.io.IOException;
@@ -19,6 +20,7 @@ import java.util.Scanner;
 @SpringBootApplication(scanBasePackages = "com.hubis.acs") // ✅ 전체 패키지를 포함하여 스캔
 @EnableTransactionManagement
 @EnableAllprotocols
+@EnableScheduling
 public class DemoApplication implements CommandLineRunner {
 
 	private static final String LOG_DIR = "C:/logs";
@@ -35,6 +37,7 @@ public class DemoApplication implements CommandLineRunner {
 	public static void main(String[] args) {
 		// 로그 디렉토리 생성
 		createLogDirectories();
+		System.setProperty("javax.net.debug", "ssl,handshake,certpath");
 		System.setProperty("java.awt.headless", "false");
 		SpringApplication.run(DemoApplication.class, args);
 	}

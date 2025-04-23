@@ -1,3 +1,4 @@
+# 프로젝트 관련 무시
 HELP.md
 .gradle
 build/
@@ -5,20 +6,34 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### STS ###
-.apt_generated
+# 공통적인 일시적/임시 파일 무시
+*.log
+*.tmp
+*.temp
+*.bak
+*~
+*.swp
+*.swo
+*.DS_Store
+Thumbs.db
+
+# Java 컴파일 산출물
+*.class
+
+# STS (Spring Tool Suite)
+.apt_generated/
 .classpath
 .factorypath
 .project
-.settings
-.springBeans
-.sts4-cache
+.settings/
+.springBeans/
+.sts4-cache/
 bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
 
-### IntelliJ IDEA ###
-.idea
+# IntelliJ IDEA
+.idea/
 *.iws
 *.iml
 *.ipr
@@ -26,12 +41,12 @@ out/
 !**/src/main/**/out/
 !**/src/test/**/out/
 
-### NetBeans ###
+# NetBeans
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
 
-### VS Code ###
+# VS Code
 .vscode/

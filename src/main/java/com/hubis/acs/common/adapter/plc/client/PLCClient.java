@@ -11,6 +11,7 @@ import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
@@ -22,7 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @EnableProtocol(protocol = "plc", server = false)
-//@Component
+@Component
 public class PLCClient {
 
     @Value("${plc.client.host}")
@@ -38,7 +39,11 @@ public class PLCClient {
     private Channel channel;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @EventListener(ApplicationReadyEvent.class) // ✅ Spring 컨텍스트 로드 완료 후 실행
+    @PostConstruct
+    public void init() {
+        startClient();
+    }
+
     public void startClient() {
         new Thread(this::connect).start(); // ✅ 별도 스레드에서 실행
     }

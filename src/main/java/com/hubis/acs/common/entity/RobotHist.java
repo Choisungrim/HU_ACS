@@ -15,13 +15,13 @@ public class RobotHist {
     @Id
     private Long hist_id; // 일련 번호
 
-    private String robot_id; // 
+    private String robot_id; // 로봇 ID
 
-    private String robot_tp; // 
+    private String robot_tp; // 로봇 타입
 
-    private String model_nm; // 
+    private String model_nm; // 모델명
 
-    private String status_tx; // 
+    private String status_tx; // 상태
 
     private double battery_no; // 로봇의 배터리 정보
 
@@ -30,21 +30,21 @@ public class RobotHist {
 
     private String site_cd; // SITE 정보
 
-    private String description_tx; // 
+    private String description_tx; // 데이터에 대한 설명
 
-    private String prev_activity_tx; // 
+    private String prev_activity_tx; // 이전 활동 내용
 
-    private String activity_tx; // 
+    private String activity_tx; // 현재 활동 내용
 
-    private String creator_by; // 
+    private String creator_by; // 데이터 생성자
 
     private java.time.LocalDateTime create_at; // 생성 시간
 
-    private String modifier_by; // 
+    private String modifier_by; // 데이터 수정자
 
     private java.time.LocalDateTime modify_at; // 수정 시간
 
-    private String trans_tx; // 
+    private String trans_tx; // 관련 트랜잭션 ID
 
     private java.time.LocalDateTime last_event_at; // 최근 이벤트 발생 시간
 

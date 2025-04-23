@@ -12,6 +12,7 @@ import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -21,7 +22,7 @@ import org.springframework.stereotype.Component;
 import java.nio.charset.StandardCharsets;
 
 @EnableProtocol(protocol = "plc", server = true)
-//@Component
+@Component
 public class PLCServer {
 
     @Value("${plc.server.port}")
@@ -37,7 +38,11 @@ public class PLCServer {
         this.plcDataHandler = plcDataHandler;
     }
 
-    @EventListener(ApplicationReadyEvent.class)
+    @PostConstruct
+    public void init(){
+        startServer();
+    }
+
     public void startServer() {
         new Thread(() -> {
             bossGroup = new NioEventLoopGroup(1);

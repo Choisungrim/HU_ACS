@@ -16,7 +16,7 @@ public class feedback extends GlobalWorkHandler {
     @Override
     public String doWork(JSONObject message) throws Exception {
 
-        publisher.publish("your/topicfeedback", "456");
+        publisher.publish("itk/acs", "456");
         LangMaster lang = new LangMaster();
         lang.setSite_cd("HU");
         List<LangMaster> langList = commonDAO.selectList(LangMaster.class, lang);

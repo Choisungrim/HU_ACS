@@ -13,6 +13,10 @@ import org.springframework.integration.mqtt.inbound.MqttPahoMessageDrivenChannel
 import org.springframework.integration.mqtt.outbound.MqttPahoMessageHandler;
 import org.springframework.messaging.MessageChannel;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import java.security.cert.X509Certificate;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -43,7 +47,7 @@ public class MqttConfig {
         options.setConnectionTimeout(100);
         options.setKeepAliveInterval(600);
         options.setAutomaticReconnect(true);
-        options.setCleanSession(false);
+        options.setCleanSession(true);
         options.setMaxReconnectDelay(10);
         options.setMaxInflight(300);
 
@@ -68,7 +72,7 @@ public class MqttConfig {
     public MqttPahoMessageHandler mqttOutbound() {
         MqttPahoMessageHandler handler = new MqttPahoMessageHandler(clientId + "_Publisher", mqttClientFactory());
         handler.setAsync(true);
-        handler.setDefaultQos(0);
+        handler.setDefaultQos(1);
         return handler;
     }
 
@@ -82,7 +86,7 @@ public class MqttConfig {
      */
     private String[] validateTopic(String topic) {
         if (topic == null || topic.trim().isEmpty()) {
-            return new String[]{"your/topic"}; // 기본값 설정
+            return new String[]{"#"}; // 기본값 설정
         }
         return topic.contains(",") ? topic.split(",") : new String[]{topic}; // 여러 개의 토픽을 배열로 반환
     }
