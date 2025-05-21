@@ -7,6 +7,7 @@ import com.hubis.acs.common.utils.EventInfoBuilder;
 import com.hubis.acs.common.utils.JsonUtils;
 import com.hubis.acs.common.utils.TimeUtils;
 import com.hubis.acs.repository.dao.CommonDAO;
+import com.hubis.acs.service.WriterService;
 import jakarta.annotation.Resource;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -29,11 +30,13 @@ public class BaseExecutorHandler {
 
     private final CommonDAO commonDAO;
     private final ApplicationContext appContext;
+    private final WriterService writerService;
 
     @Autowired
-    public BaseExecutorHandler(@Qualifier("commonDAO") CommonDAO commonDAO, ApplicationContext appContext) {
+    public BaseExecutorHandler(@Qualifier("commonDAO") CommonDAO commonDAO, ApplicationContext appContext, WriterService writerService) {
         this.commonDAO = commonDAO;
         this.appContext = appContext;
+        this.writerService = writerService;
     }
 
     @Value("${system.siteid}")
@@ -67,16 +70,12 @@ public class BaseExecutorHandler {
 
 
         BaseLogHandler.exec(eventInfo, reqMsg, BaseConstants.EVENTLOG.LOG_TYPE.UI_Message);
-//        if(workId.equals(UI.MESSAGENAME.UIResponse))
-//            ResponseHandler.completeResponse(
-//                    dataSet.getString("WORKID"), transactionId, dataSet.getString(BaseConstants.TAG_NAME.ReturnCode));
-//        else
-//        {
-            String returnCode = this.execute(eventInfo, reqMsg, replyMsg);
+        if(workId.equals(BaseConstants.UI.MESSAGENAME.UIResponse))
+            ResponseHandler.completeResponse(
+                    dataSet.getString("WORKID"), transactionId, dataSet.getString(BaseConstants.TAG_NAME.ReturnCode));
 //
-//            if (!returnCode.equals(BaseConstants.RETURNCODE.Success))
-//                LogHandler.exec(eventInfo, replyMsg, BaseConstants.EVENTLOG.LOG_TYPE.UI_Error);
-//        }
+        String returnCode = this.execute(eventInfo, reqMsg, replyMsg);
+
     }
 
     public void executeByACS(JSONObject reqMsg)
@@ -102,7 +101,6 @@ public class BaseExecutorHandler {
                 .addWorkId(workId)
                 .addWorkGroupId(workGroupId)
                 .addActivity(workId)
-                .addUserId(requestId)
                 .build();
 
         BaseLogHandler.exec(eventInfo, reqMsg, BaseConstants.EVENTLOG.LOG_TYPE.UI_Message);
@@ -117,37 +115,27 @@ public class BaseExecutorHandler {
         String returnMessage = "";
         Object[] returnArguments = null;
         JSONObject reqHeader = JsonUtils.getMessageObject(reqMsg, BaseConstants.TAG_NAME.Header);
-        GlobalWorkHandlerIF ruleService = BaseWorkClassLoader.getWorkObject(eventInfo.getWorkGroupId(), eventInfo.getWorkId().toLowerCase());
+        //GlobalWorkHandlerIF ruleService = BaseWorkClassLoader.getWorkObject(eventInfo.getWorkGroupId(), eventInfo.getWorkId().toLowerCase());
+        GlobalWorkHandlerIF ruleService = BaseWorkHandlerRegistry.getHandler(eventInfo.getWorkGroupId().toLowerCase(), eventInfo.getWorkId().toLowerCase().toLowerCase());
 
         if (!CommonUtils.isNullOrEmpty(ruleService))
         {
-            logger.info("▶▶▶ START [" + eventInfo.getRequestId() + "." + eventInfo.getWorkId() + "." + eventInfo.getTransactionId() + "] ◀◀◀ \n" + JsonUtils.getIndentedStyle(JsonUtils.toString(reqMsg)));
+            logger.info("▶▶▶ START [" + eventInfo.getRequestId() + "." + eventInfo.getWorkId() + "." + eventInfo.getTransactionId() + "] ◀◀◀ \n");
             long startTime = System.currentTimeMillis();
 
             try
             {
-//				transactionManager.begin();
 
 //				ruleService.doInit(appContext, commonDAO, transactionManager, eventInfo);
                 ruleService.doInit(appContext, commonDAO, eventInfo);
                 returnCode = ruleService.doWork(reqMsg);
 
-//		    	transactionManager.commit();
             }
             catch(CustomException ce)
             {
                 returnCode = ce.getErrorCode();
                 returnArguments = ce.getErrorArguments();
 
-                // 여러 건 부분 에러 시, CustomException 발생한다.
-//				if (returnCode.equals(BaseConstants.RETURNCODE.PartialError))
-//				{
-//					transactionManager.commit();
-//				}
-//				else
-//				{
-//					transactionManager.rollback();
-//				}
             }
             catch(Exception e)
             {
@@ -204,8 +192,8 @@ public class BaseExecutorHandler {
             long endTime = System.currentTimeMillis();
             logger.info("▶▶▶ FINISH [" + eventInfo.getRequestId() + "." + eventInfo.getWorkId() + "." + eventInfo.getTransactionId() + "], ReturnCode=" + returnCode +" ElapsedTime=" + (endTime - startTime) + "ms ◀◀◀");
 
-//            if( eventInfo.getWorkGroupId().toUpperCase().equals("UI"))
-//                this.notifyUIResponse(returnCode, reqHeader.getString(BaseConstants.TAG_NAME.TransactionId), eventInfo.getSiteId(), eventInfo.getWorkId());
+            if( eventInfo.getWorkGroupId().toLowerCase().equals(BaseConstants.TAG_NAME.UI))
+                this.notifyUIResponse(eventInfo.getWorkId(), eventInfo.getTransactionId(), returnCode, eventInfo.getSiteId());
         }
         else
         {
@@ -215,23 +203,9 @@ public class BaseExecutorHandler {
             returnArguments = new Object[] { eventInfo.getWorkId() };
         }
 
-//        try
-//        {
-//            returnMessage = NlsCache.getNlsData(eventInfo.getSiteId(), returnCode, eventInfo.getLanguage());
-//
-//            if (!CommonUtils.isNullOrEmpty(returnArguments))
-//                returnMessage = NlsCache.getNlsData(eventInfo.getSiteId(), returnCode, eventInfo.getLanguage(), returnArguments);
-//
-//            // Error 시, ReturnCode 같이 보여주자.
-//            if (!returnCode.equals(BaseConstants.RETURNCODE.Success))
-//                returnMessage = "[" + returnCode + "]\n" + returnMessage;
-//
-//            JsonUtils.putJsonObject(repMsg, BaseConstants.TAG_NAME.ReturnCode, returnCode);
-//            JsonUtils.putJsonObject(repMsg, BaseConstants.TAG_NAME.ReturnMessage, returnMessage);
-//        }
-//        catch (Exception e) {}
-
         return returnCode;
     }
-
+    private void notifyUIResponse(String workId, String transactionId, String returnCode, String siteId ) {
+        writerService.sendToUIResponse(workId,transactionId,returnCode,siteId);
+    }
 }

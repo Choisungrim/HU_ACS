@@ -13,15 +13,27 @@ public class BaseConstants {
             }
         }
     }
+
+    public static class UI
+    {
+
+        public static class MESSAGENAME
+        {
+            public final static String UIResponse = "ui_response";
+        }
+    }
     public static class TAG_NAME
     {
+        public final static String Header = "header";
+        public final static String DataSet = "dataSet";
         public final static String RequestId = "requestId";
         public final static String WorkId = "workId";
         public final static String TransactionId = "transactionId";
-        public final static String Header = "header";
-        public final static String DataSet = "dataSet";
         public final static String ReturnCode = "returnCode";
         public final static String ReturnMessage = "returnMessage";
+        public final static String SiteId = "siteId";
+        public final static String UI = "ui";
+
 
     }
 

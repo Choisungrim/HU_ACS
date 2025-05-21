@@ -1,5 +1,6 @@
 package com.hubis.acs.common.handler;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hubis.acs.common.configuration.WorkQueue;
 import com.hubis.acs.common.utils.CommonUtils;
 import com.hubis.acs.common.utils.JsonUtils;
@@ -34,14 +35,26 @@ public class BaseMessageHandler {
     private void processMessages(Message<?> message, String client)
     {
         try {
-            JSONObject reqMsg = JsonUtils.toJson(message.getPayload().toString());
+            Object payload = message.getPayload();
+            String jsonStr;
+
+            if (payload instanceof String) {
+                jsonStr = (String) payload;
+            } else {
+                // JSON 문자열로 안전 변환
+                jsonStr = new ObjectMapper().writeValueAsString(payload);
+            }
+
+            JSONObject reqMsg = JsonUtils.toJson(jsonStr);
+            if (reqMsg == null) {
+                throw new RuntimeException("Invalid JSON");
+            }
+
             executor.executeByACS(reqMsg);
         }catch (Exception ex){
             ex.printStackTrace();
         }
-
     }
-
 }
 
 //class commandThread implements Runnable

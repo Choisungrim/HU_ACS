@@ -1,6 +1,7 @@
-package com.hubis.acs.common.handler;
+package com.hubis.acs.common.loader;
 
 import com.hubis.acs.common.constants.BaseConstants;
+import com.hubis.acs.common.handler.GlobalWorkHandlerIF;
 import jakarta.annotation.PostConstruct;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
@@ -59,12 +60,15 @@ public class BaseWorkClassLoader {
             Object obj = it.next();
 
             String objName = obj.toString().substring(6);
-            //String pkgName = objName.substring(0, objName.lastIndexOf("."));
-            String grpName = "work";
+            String pkgName = objName.substring(0, objName.lastIndexOf("."));
+            String[] parts = pkgName.split("\\.");
+            String grpName = parts.length >= 4 ? parts[3] : "default";
             String clsName = objName.substring(objName.lastIndexOf(".")+1);
 
             initWorkClass(objName, grpName, clsName.toLowerCase());
         }
+
+        System.out.println("BaseWorkClassLoader Initialized : "+lstWorkClass.toString());
     }
 
     public void initWorkClass(Class<?> baseWorkClass, String workPackage) throws Exception
@@ -95,6 +99,8 @@ public class BaseWorkClassLoader {
 
             initWorkClass(objName, grpName, clsName.toLowerCase());
         }
+
+        System.out.println(baseWorkClass.getName()+"Initialized : "+lstWorkClass.toString());
     }
 
     private void initWorkClass(String objName, String grpName, String clsName) throws Exception

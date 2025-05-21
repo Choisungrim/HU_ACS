@@ -19,8 +19,47 @@ public class CommonDAO {
     private EntityManager entityManager;
 
     // 단일 조회
-    public <T> T selectOne(Class<T> clazz, Object id) {
-        return entityManager.find(clazz, id);
+    public <T> T selectOneById(Class<T> clazz, Object primaryId) {
+        return entityManager.find(clazz, primaryId);
+    }
+
+    public <T> T selectOne(Class<T> clazz, T example) {
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<T> query = cb.createQuery(clazz);
+        Root<T> root = query.from(clazz);
+
+        Predicate predicate = cb.conjunction(); // 기본: true (AND 조건 시작)
+
+        for (java.lang.reflect.Field field : clazz.getDeclaredFields()) {
+            field.setAccessible(true);
+
+            // static, final 필드 제외
+            if (java.lang.reflect.Modifier.isStatic(field.getModifiers()) ||
+                    java.lang.reflect.Modifier.isFinal(field.getModifiers())) {
+                continue;
+            }
+
+            try {
+                Object value = field.get(example);
+                if (value != null) {
+                    predicate = cb.and(predicate, cb.equal(root.get(field.getName()), value));
+                }
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException("Reflection 오류", e);
+            }
+        }
+
+        if (predicate.getExpressions().isEmpty()) {
+            throw new IllegalArgumentException("조건 없는 selectOne은 허용되지 않습니다.");
+        }
+
+        query.where(predicate);
+
+        List<T> result = entityManager.createQuery(query)
+                .setMaxResults(1)
+                .getResultList();
+
+        return result.isEmpty() ? null : result.get(0);
     }
 
     // 다중 조회
@@ -65,23 +104,34 @@ public class CommonDAO {
     }
 
     // 데이터 생성
-    @Transactional
-    public <T> void insert(T entity) {
+    @SuppressWarnings("unchecked")
+    public <T> boolean insert(T entity) {
+        Class<T> clazz = (Class<T>) entity.getClass(); // 타입 안정성을 확보
+        if (selectOne(clazz, entity) != null) {
+            return false;
+        }
         entityManager.persist(entity);
+        return true;
     }
 
     // 데이터 수정
-    @Transactional
-    public <T> void update(T entity) {
+    @SuppressWarnings("unchecked")
+    public <T> boolean update(T entity) {
+        Class<T> clazz = (Class<T>) entity.getClass();
+        if (selectOne(clazz, entity) == null) {
+            return false;
+        }
         entityManager.merge(entity);
+        return true;
     }
 
     // 데이터 삭제
-    @Transactional
-    public <T> void delete(Class<T> clazz, Object id) {
-        T entity = selectOne(clazz, id);
+    public <T> boolean delete(Class<T> clazz, Object id) {
+        T entity = selectOneById(clazz, id);
         if (entity != null) {
             entityManager.remove(entity);
+            return true;
         }
+        return false;
     }
 }

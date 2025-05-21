@@ -19,7 +19,7 @@ public class MqttPingScheduler {
         String topic = "itk/test/ping"; // 원하는 토픽으로 변경
         String message = "ping";
         publisher.publish(topic, message);
-        System.out.println("📡 Sent ping message to topic: " + topic);
+//        System.out.println("📡 Sent ping message to topic: " + topic);
     }
 }
 

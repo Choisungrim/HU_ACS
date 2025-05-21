@@ -96,13 +96,33 @@
 <!--        <writeTimeout>5 seconds</writeTimeout>-->
 <!--    </appender>-->
 
-<!--    &lt;!&ndash; Logstash 로그 설정 &ndash;&gt;-->
-<!--    <logger name="com.hubis.acs" level="INFO" additivity="false">-->
-<!--        <appender-ref ref="CONSOLE"/>-->
-<!--        <appender-ref ref="APP_FILE"/>-->
-<!--        <appender-ref ref="ERROR_FILE"/>-->
-<!--        <appender-ref ref="LOGSTASH"/>-->
-<!--    </logger>-->
+    <appender name="LOGSTASH_APPENDER" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+        <destination>127.0.0.1:5000</destination>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>{"app_name":"acs-system"}</customFields>
+            <includeMdc>true</includeMdc>
+            <includeContext>true</includeContext>
+        </encoder>
+        <keepAliveDuration>5 minutes</keepAliveDuration>
+        <reconnectionDelay>5 seconds</reconnectionDelay> <!-- 점진적인 재시도 -->
+        <writeTimeout>5 seconds</writeTimeout>
+    </appender>
+
+    <!-- 비동기 AsyncAppender로 감싸기 -->
+    <appender name="LOGSTASH" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>5000</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <neverBlock>true</neverBlock> <!-- Logstash가 죽어도 앱은 블로킹되지 않음 -->
+        <appender-ref ref="LOGSTASH_APPENDER"/>
+    </appender>
+
+    <!-- Logstash 로그 설정 -->
+    <logger name="com.hubis.acs" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="APP_FILE"/>
+        <appender-ref ref="ERROR_FILE"/>
+        <appender-ref ref="LOGSTASH"/>
+    </logger>
 
     <!-- Spring Boot 관련 로그 설정 -->
     <logger name="org.springframework.boot" level="INFO" additivity="false">

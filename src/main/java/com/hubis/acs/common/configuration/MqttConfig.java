@@ -57,6 +57,7 @@ public class MqttConfig {
     @Bean
     public MqttPahoMessageDrivenChannelAdapter mqttInbound() {
         String[] topics = validateTopic(topic);
+        System.out.println(topics);
         MqttPahoMessageDrivenChannelAdapter adapter =
                 new MqttPahoMessageDrivenChannelAdapter(clientId + "_Subscribe", mqttClientFactory(), topics);
         adapter.setOutputChannel(mqttInputChannel());
