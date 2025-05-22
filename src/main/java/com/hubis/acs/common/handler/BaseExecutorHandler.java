@@ -89,6 +89,8 @@ public class BaseExecutorHandler {
         String requestId = JsonUtils.getJsonString(header, BaseConstants.TAG_NAME.RequestId);
         String workId = JsonUtils.getJsonString(header, BaseConstants.TAG_NAME.WorkId);
         String transactionId = JsonUtils.getJsonString(header, BaseConstants.TAG_NAME.TransactionId);
+        String userId = JsonUtils.getJsonString(header, BaseConstants.TAG_NAME.UserId);
+        String siteId = JsonUtils.getJsonString(header, BaseConstants.TAG_NAME.SiteId);
 
         String workGroupId = requestId.toLowerCase();
 
@@ -101,6 +103,8 @@ public class BaseExecutorHandler {
                 .addWorkId(workId)
                 .addWorkGroupId(workGroupId)
                 .addActivity(workId)
+                .addUserId(userId)
+                .addSiteId(siteId)
                 .build();
 
         BaseLogHandler.exec(eventInfo, reqMsg, BaseConstants.EVENTLOG.LOG_TYPE.UI_Message);
@@ -193,7 +197,7 @@ public class BaseExecutorHandler {
             logger.info("▶▶▶ FINISH [" + eventInfo.getRequestId() + "." + eventInfo.getWorkId() + "." + eventInfo.getTransactionId() + "], ReturnCode=" + returnCode +" ElapsedTime=" + (endTime - startTime) + "ms ◀◀◀");
 
             if( eventInfo.getWorkGroupId().toLowerCase().equals(BaseConstants.TAG_NAME.UI))
-                this.notifyUIResponse(eventInfo.getWorkId(), eventInfo.getTransactionId(), returnCode, eventInfo.getSiteId());
+                this.notifyUIResponse(eventInfo, returnCode);
         }
         else
         {
@@ -205,7 +209,7 @@ public class BaseExecutorHandler {
 
         return returnCode;
     }
-    private void notifyUIResponse(String workId, String transactionId, String returnCode, String siteId ) {
-        writerService.sendToUIResponse(workId,transactionId,returnCode,siteId);
+    private void notifyUIResponse(EventInfo eventInfo, String returnCode) {
+        writerService.sendToUIResponse(eventInfo, returnCode);
     }
 }

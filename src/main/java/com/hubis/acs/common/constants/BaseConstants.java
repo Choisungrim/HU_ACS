@@ -29,10 +29,14 @@ public class BaseConstants {
         public final static String RequestId = "requestId";
         public final static String WorkId = "workId";
         public final static String TransactionId = "transactionId";
+        public final static String UserId = "userId";
         public final static String ReturnCode = "returnCode";
         public final static String ReturnMessage = "returnMessage";
         public final static String SiteId = "siteId";
         public final static String UI = "ui";
+        public final static String ACS = "acs";
+        public final static String MiddleWare = "middleware";
+
 
 
     }

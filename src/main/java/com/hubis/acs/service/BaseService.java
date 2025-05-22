@@ -1,5 +1,7 @@
 package com.hubis.acs.service;
 
+import com.hubis.acs.common.entity.vo.EventInfo;
+
 import java.util.List;
 
 public interface BaseService {
@@ -12,9 +14,9 @@ public interface BaseService {
 
     <T> List<T> findByConditions(Class<T> clazz, T example);
 
-    <T> boolean save(T entity);
+    <T> boolean save(EventInfo eventInfo, T entity);
 
-    <T> void saveOrUpdate(T entity);
+    <T> boolean saveOrUpdate(EventInfo eventInfo, T entity);
 
     <T> boolean delete(Class<T> clazz, Object id);
 }

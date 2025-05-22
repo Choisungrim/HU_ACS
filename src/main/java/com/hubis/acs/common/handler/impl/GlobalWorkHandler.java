@@ -6,6 +6,7 @@ import com.hubis.acs.common.entity.vo.EventInfo;
 import com.hubis.acs.common.handler.GlobalWorkHandlerIF;
 import com.hubis.acs.repository.dao.CommonDAO;
 import com.hubis.acs.service.BaseService;
+import com.hubis.acs.service.WriterService;
 import org.json.JSONObject;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
@@ -17,11 +18,9 @@ public class GlobalWorkHandler implements GlobalWorkHandlerIF {
     protected CommonDAO commonDAO;
     protected EventInfo eventInfo;
 
-    //MQTT Publisher
-    protected Publisher publisher;
-
     //Service
     protected BaseService baseService;
+    protected WriterService writerService;
 
     public String result = BaseConstants.RETURNCODE.Success;
 
@@ -35,8 +34,8 @@ public class GlobalWorkHandler implements GlobalWorkHandlerIF {
         this.appContext = appContext;
         this.commonDAO = commonDAO;
         this.eventInfo = eventInfo;
-        this.publisher = appContext.getBean(Publisher.class);
-        this.baseService = appContext.getBean(BaseService.class);
+        this.baseService = appContext.getBean("BaseService",BaseService.class);
+        this.writerService = appContext.getBean("WriterService",WriterService.class);
 
     }
 }

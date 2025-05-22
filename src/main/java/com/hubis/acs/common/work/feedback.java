@@ -2,6 +2,7 @@ package com.hubis.acs.common.work;
 
 import com.hubis.acs.common.entity.LangMaster;
 import com.hubis.acs.common.handler.impl.GlobalWorkHandler;
+import com.hubis.acs.service.WriterService;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +17,7 @@ public class feedback extends GlobalWorkHandler {
     @Override
     public String doWork(JSONObject message) throws Exception {
 
-        publisher.publish("itk/acs", "456");
+        writerService.sendToMiddleware(eventInfo, "middleware/response", "456");
         LangMaster lang = new LangMaster();
         lang.setSite_cd("HU");
 

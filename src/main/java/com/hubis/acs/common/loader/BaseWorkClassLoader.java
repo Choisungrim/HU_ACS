@@ -68,7 +68,6 @@ public class BaseWorkClassLoader {
             initWorkClass(objName, grpName, clsName.toLowerCase());
         }
 
-        System.out.println("BaseWorkClassLoader Initialized : "+lstWorkClass.toString());
     }
 
     public void initWorkClass(Class<?> baseWorkClass, String workPackage) throws Exception
@@ -99,8 +98,6 @@ public class BaseWorkClassLoader {
 
             initWorkClass(objName, grpName, clsName.toLowerCase());
         }
-
-        System.out.println(baseWorkClass.getName()+"Initialized : "+lstWorkClass.toString());
     }
 
     private void initWorkClass(String objName, String grpName, String clsName) throws Exception
