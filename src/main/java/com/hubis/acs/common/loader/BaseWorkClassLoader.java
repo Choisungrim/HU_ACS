@@ -27,13 +27,13 @@ public class BaseWorkClassLoader {
         {
             initWorkClass();
 
-            logger.info("BaseWorkClassLoader Initialized");
+//            logger.info("BaseWorkClassLoader Initialized");
         }
         catch (Exception e)
         {
             System.out.println(e.getMessage());
 
-            logger.error("BaseWorkClassLoader Load Error: " + e.getMessage());
+//            logger.error("BaseWorkClassLoader Load Error: " + e.getMessage());
         }
     }
 
@@ -48,7 +48,7 @@ public class BaseWorkClassLoader {
         Set<Class<? extends GlobalWorkHandlerIF>> subTypes = reflections.getSubTypesOf(GlobalWorkHandlerIF.class);
         // 서브 클래스가 0개면 직접 출력
         if (subTypes.isEmpty()) {
-            System.out.println("⚠️ No subclasses found. Check classpath or package structure.");
+//            System.out.println("⚠️ No subclasses found. Check classpath or package structure.");
             return; // 더 이상 진행할 필요 없음
         }
         System.out.println("🔍 Found " + subTypes.size() + " subclasses of " + GlobalWorkHandlerIF.class.getName() + " in package: " + BaseConstants.SYSTEM.CONFIG.PACKAGE.GeneralWork);
@@ -81,10 +81,10 @@ public class BaseWorkClassLoader {
         Set<Class<?>> subTypes = (Set<Class<?>>) reflections.getSubTypesOf(baseWorkClass);
         // 서브 클래스가 0개면 직접 출력
         if (subTypes.isEmpty()) {
-            System.out.println("⚠️ No subclasses found. Check classpath or package structure.");
+//            System.out.println("⚠️ No subclasses found. Check classpath or package structure.");
             return; // 더 이상 진행할 필요 없음
         }
-        System.out.println("🔍 Found " + subTypes.size() + " subclasses of " + baseWorkClass.getName() + " in package: " + workPackage);
+//        System.out.println("🔍 Found " + subTypes.size() + " subclasses of " + baseWorkClass.getName() + " in package: " + workPackage);
 
         Iterator<?> it = reflections.getSubTypesOf(baseWorkClass).iterator();
         while(it.hasNext())

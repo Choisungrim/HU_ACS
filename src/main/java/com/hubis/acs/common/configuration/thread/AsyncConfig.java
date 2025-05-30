@@ -1,5 +1,6 @@
 package com.hubis.acs.common.configuration.thread;
 
+import jakarta.annotation.PreDestroy;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.TaskExecutor;
@@ -30,4 +31,14 @@ public class AsyncConfig {
             return executor;
         });
     }
+
+    @PreDestroy
+    public void shutdownExecutors() {
+        executorMap.values().forEach(executor -> {
+            if (executor instanceof ThreadPoolTaskExecutor threadPool) {
+                threadPool.shutdown();
+            }
+        });
+    }
+
 }

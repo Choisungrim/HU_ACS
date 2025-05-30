@@ -2,13 +2,13 @@ package com.hubis.acs.common.handler;
 
 import com.hubis.acs.common.constants.BaseConstants;
 import com.hubis.acs.common.entity.vo.EventInfo;
+import com.hubis.acs.common.handler.exception.CustomException;
 import com.hubis.acs.common.utils.CommonUtils;
 import com.hubis.acs.common.utils.EventInfoBuilder;
 import com.hubis.acs.common.utils.JsonUtils;
 import com.hubis.acs.common.utils.TimeUtils;
 import com.hubis.acs.repository.dao.CommonDAO;
 import com.hubis.acs.service.WriterService;
-import jakarta.annotation.Resource;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,52 +39,12 @@ public class BaseExecutorHandler {
         this.writerService = writerService;
     }
 
-    @Value("${system.siteid}")
-    private String siteId;
-
-    public void executeByUI(JSONObject reqMsg)
-    {
-        JSONObject replyMsg = new JSONObject();
-
-        //Header
-        JSONObject header = JsonUtils.getJsonObject(reqMsg, BaseConstants.TAG_NAME.Header);
-        JSONObject dataSet = JsonUtils.getJsonObject(reqMsg, BaseConstants.TAG_NAME.DataSet);
-
-        String requestId = JsonUtils.getJsonString(header, BaseConstants.TAG_NAME.RequestId);
-        String workId = JsonUtils.getJsonString(header, BaseConstants.TAG_NAME.WorkId);
-        String transactionId = JsonUtils.getJsonString(header, BaseConstants.TAG_NAME.TransactionId);
-
-        String workGroupId = requestId.toLowerCase();
-
-        if (CommonUtils.isNullOrEmpty(transactionId))
-            transactionId = TimeUtils.getCurrentTimekey();
-
-        EventInfo eventInfo = new EventInfoBuilder(transactionId)
-                .addSiteId(this.siteId)
-                .addRequestId(requestId)
-                .addWorkId(workId)
-                .addWorkGroupId(workGroupId)
-                .addActivity(workId)
-                .addUserId(requestId)
-                .build();
-
-
-        BaseLogHandler.exec(eventInfo, reqMsg, BaseConstants.EVENTLOG.LOG_TYPE.UI_Message);
-        if(workId.equals(BaseConstants.UI.MESSAGENAME.UIResponse))
-            ResponseHandler.completeResponse(
-                    dataSet.getString("WORKID"), transactionId, dataSet.getString(BaseConstants.TAG_NAME.ReturnCode));
-//
-        String returnCode = this.execute(eventInfo, reqMsg, replyMsg);
-
-    }
-
     public void executeByACS(JSONObject reqMsg)
     {
         JSONObject replyMsg = new JSONObject();
 
         //Header
         JSONObject header = JsonUtils.getJsonObject(reqMsg, BaseConstants.TAG_NAME.Header);
-        JSONObject dataSet = JsonUtils.getJsonObject(reqMsg, BaseConstants.TAG_NAME.DataSet);
 
         String requestId = JsonUtils.getJsonString(header, BaseConstants.TAG_NAME.RequestId);
         String workId = JsonUtils.getJsonString(header, BaseConstants.TAG_NAME.WorkId);
@@ -97,15 +57,14 @@ public class BaseExecutorHandler {
         if (CommonUtils.isNullOrEmpty(transactionId))
             transactionId = TimeUtils.getCurrentTimekey();
 
-        EventInfo eventInfo = new EventInfoBuilder(transactionId)
-                .addSiteId(this.siteId)
-                .addRequestId(requestId)
-                .addWorkId(workId)
-                .addWorkGroupId(workGroupId)
-                .addActivity(workId)
-                .addUserId(userId)
-                .addSiteId(siteId)
-                .build();
+            EventInfo eventInfo = new EventInfoBuilder(transactionId)
+                    .addRequestId(requestId)
+                    .addWorkId(workId)
+                    .addWorkGroupId(workGroupId)
+                    .addActivity(workId)
+                    .addUserId(userId)
+                    .addSiteId(siteId)
+                    .build();
 
         BaseLogHandler.exec(eventInfo, reqMsg, BaseConstants.EVENTLOG.LOG_TYPE.UI_Message);
         String returnCode = this.execute(eventInfo, reqMsg, replyMsg);
@@ -118,7 +77,7 @@ public class BaseExecutorHandler {
         String returnCode = "";
         String returnMessage = "";
         Object[] returnArguments = null;
-        JSONObject reqHeader = JsonUtils.getMessageObject(reqMsg, BaseConstants.TAG_NAME.Header);
+//        JSONObject reqHeader = JsonUtils.getMessageObject(reqMsg, BaseConstants.TAG_NAME.Header);
         //GlobalWorkHandlerIF ruleService = BaseWorkClassLoader.getWorkObject(eventInfo.getWorkGroupId(), eventInfo.getWorkId().toLowerCase());
         GlobalWorkHandlerIF ruleService = BaseWorkHandlerRegistry.getHandler(eventInfo.getWorkGroupId().toLowerCase(), eventInfo.getWorkId().toLowerCase().toLowerCase());
 

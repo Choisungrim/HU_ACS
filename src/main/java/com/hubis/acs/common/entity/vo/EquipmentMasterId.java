@@ -1,8 +1,13 @@
 package com.hubis.acs.common.entity.vo;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.io.Serializable;
 import java.util.Objects;
 
+@Getter
+@Setter
 public class EquipmentMasterId implements Serializable {
 
     private String equipment_id;

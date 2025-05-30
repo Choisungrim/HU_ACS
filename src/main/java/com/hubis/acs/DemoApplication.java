@@ -60,27 +60,27 @@ public class DemoApplication implements CommandLineRunner {
 //		 		"C:\\HUBIS\\ROBOTICS\\HU_ACS\\acs\\src\\main\\resources\\uml-diagram.puml"  // 출력 파일 경로
 //		 );
 
-		Scanner scanner = new Scanner(System.in);
-		while (true) {
-			System.out.println("명령어를 입력하세요 / 도움말 help");
-			String input = scanner.nextLine().trim();
-			String[] commands = input.split(" ");
-
-			if (commands[0].equalsIgnoreCase("exit")) {
-				System.out.println("프로그램을 종료합니다.");
-				break;
-			} else if (commands[0].equalsIgnoreCase("help")) {
-				System.out.println("사용 가능한 명령어:");
-				System.out.println("1. transfer agentCount - 임의의 데이터로 시뮬레이션합니다.");
-				System.out.println("2. exit - 프로그램을 종료합니다.");
-			} else if(commands[0].equalsIgnoreCase("transfer")) {
-				int agentCount = Integer.parseInt(commands[1]);
-				transferService.pathFinding(agentCount);
-			} else {
-				System.out.println("잘못된 명령어입니다. 'help'를 입력하여 사용 가능한 명령어를 확인하세요.");
-			}
-		}
-		scanner.close();
+//		Scanner scanner = new Scanner(System.in);
+//		while (true) {
+//			System.out.println("명령어를 입력하세요 / 도움말 help");
+//			String input = scanner.nextLine().trim();
+//			String[] commands = input.split(" ");
+//
+//			if (commands[0].equalsIgnoreCase("exit")) {
+//				System.out.println("프로그램을 종료합니다.");
+//				break;
+//			} else if (commands[0].equalsIgnoreCase("help")) {
+//				System.out.println("사용 가능한 명령어:");
+//				System.out.println("1. transfer agentCount - 임의의 데이터로 시뮬레이션합니다.");
+//				System.out.println("2. exit - 프로그램을 종료합니다.");
+//			} else if(commands[0].equalsIgnoreCase("transfer")) {
+//				int agentCount = Integer.parseInt(commands[1]);
+//				transferService.pathFinding(agentCount);
+//			} else {
+//				System.out.println("잘못된 명령어입니다. 'help'를 입력하여 사용 가능한 명령어를 확인하세요.");
+//			}
+//		}
+//		scanner.close();
 	}
 
 }

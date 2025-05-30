@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 public abstract class BaseEntity {
 
     @Column(name = "usable_fl", columnDefinition = "TINYINT(1)")
-    private Boolean usable_fl;
+    private Integer usable_fl;
     private String description_tx;
     private String prev_activity_tx;
     private String activity_tx;

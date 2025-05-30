@@ -17,6 +17,9 @@ public class BaseWorkHandlerRegistry {
 
     @PostConstruct
     public void init() {
+
+        System.out.println("BaseWorkClassLoader Initialized");
+
         Map<String, GlobalWorkHandlerIF> beans = context.getBeansOfType(GlobalWorkHandlerIF.class);
         for (Map.Entry<String, GlobalWorkHandlerIF> entry : beans.entrySet()) {
             handlerMap.put(entry.getKey(), entry.getValue());

@@ -1,4 +1,4 @@
-package com.hubis.acs.common.handler;
+package com.hubis.acs.common.handler.exception;
 
 import lombok.Getter;
 

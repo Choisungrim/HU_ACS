@@ -36,9 +36,9 @@ public class BaseConstants {
         public final static String UI = "ui";
         public final static String ACS = "acs";
         public final static String MiddleWare = "middleware";
-
-
-
+        public final static String Task = "task";
+        public final static String Response = "response";
+        public final static String Request = "request";
     }
 
     public static class RETURNCODE
@@ -49,12 +49,75 @@ public class BaseConstants {
         public final static String DBCommitFail = "DB_COMMIT_FAIL";
     }
 
+    public static class RequestId
+    {
+        public final static String ACS = "acs";
+        public final static String MiddleWare = "middleware";
+        public final static String UI = "ui";
+        public final static String MES = "mes";
+        public final static String MCS = "mcs";
+        public final static String WMS = "wms";
+        public final static String WCS = "wcs";
+    }
+
+    public static class Task
+    {
+        public final static String Move_Start = "move_start";
+        public final static String Move_Complete = "move_complete";
+        public final static String Load_Start = "load_start";
+        public final static String Load_Complete = "load_complete";
+        public final static String Unload_Start = "unload_start";
+        public final static String Unload_Complete = "unload_complete";
+        public final static String Job_Complete = "job_complete";
+    }
+
+    public static class Language
+    {
+        public final static String English = "en";
+        public final static String Spanish = "es";
+        public final static String Korean = "ko";
+        public final static String China = "ch";
+        public final static String Japan = "jp";
+
+    }
+
+
+    public static class Transfer
+    {
+        public static class State
+        {
+            public final static String READY = "ready";
+            public final static String QUEUED = "queued";
+            public final static String RUNNING = "running";
+            public final static String LOADING = "loading";
+            public final static String UNLOADING = "unloading";
+            public final static String COMPLETED = "completed";
+        }
+    }
+
     public static class EVENTLOG
     {
         public static class LOG_TYPE
         {
             public final static String UI_Message = "UI_Message";
             public final static String UI_Error = "UI_Error";
+        }
+    }
+
+    public static class Usable
+    {
+        public final static int USABLE = 1;
+        public final static int UNUSABLE = 0;
+    }
+    public static class Cache
+    {
+        public static class ConstType
+        {
+            public final static String WORK = "WORK";
+        }
+        public static class ConstCode
+        {
+            public final static String WORKABLE_ROBOT_BATTERY = "WORKABLE_ROBOT_BATTERY";
         }
     }
 }

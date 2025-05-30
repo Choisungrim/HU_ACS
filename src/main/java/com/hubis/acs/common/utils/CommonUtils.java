@@ -1,7 +1,7 @@
 package com.hubis.acs.common.utils;
 
 import com.hubis.acs.common.entity.vo.EventInfo;
-import com.hubis.acs.common.handler.CustomException;
+import com.hubis.acs.common.handler.exception.CustomException;
 import org.json.JSONObject;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;

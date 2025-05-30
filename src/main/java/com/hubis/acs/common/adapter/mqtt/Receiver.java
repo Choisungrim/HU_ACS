@@ -20,7 +20,6 @@ public class Receiver {
 
     @ServiceActivator(inputChannel = "mqttInputChannel")
     public void mqttMessageHandler(Message<?> message) {
-        System.out.println("Received: " + message);
         baseMessageHandler.handle(message,"MQTT");
     }
 

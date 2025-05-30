@@ -12,7 +12,7 @@ public class TimeUtils {
     public static String FORMAT_TIME = "HH:mm:ss";
     public static String FORMAT_MILITIME = "HH:mm:ss.SSS";
 
-    public static String NONFORMAT_FULL = "yyyyMMddHHmmssSS";
+    public static String NONFORMAT_FULL = "yyyyMMddHHmmssSSS";
     public static String NONFORMAT_NORMAL = "yyyyMMddHHmmss";
     public static String NONFORMAT_DATE = "yyyyMMdd";
     public static String NONFORMAT_DATE_HOUR = "yyyyMMddHH";

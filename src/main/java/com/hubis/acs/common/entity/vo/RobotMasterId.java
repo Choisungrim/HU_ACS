@@ -1,8 +1,13 @@
 package com.hubis.acs.common.entity.vo;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.io.Serializable;
 import java.util.Objects;
 
+@Setter
+@Getter
 public class RobotMasterId implements Serializable {
 
     private String robot_id;

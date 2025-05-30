@@ -1,7 +1,9 @@
 package com.hubis.acs.ui.work;
 
+import com.hubis.acs.common.constants.BaseConstants;
 import com.hubis.acs.common.entity.TransferControl;
 import com.hubis.acs.common.handler.impl.GlobalWorkHandler;
+import com.hubis.acs.common.utils.TimeUtils;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,23 +15,22 @@ public class CreateTransferControl extends GlobalWorkHandler {
 
     @Override
     public String doWork(JSONObject message) throws Exception {
-        System.out.println(message.toString());
         JSONObject header = message.getJSONObject("header");
         JSONObject dataSet = message.getJSONObject("dataSet");
-        String transferId = dataSet.getString("transferId");
 
+        String transferId = dataSet.optString("transferId", TimeUtils.getCurrentTimekey());
         String transferDest = dataSet.optString("transferDestination", "");
         String transferSource = dataSet.optString("transferSource", "");
         String transferRobot = dataSet.optString("transferRobot", "");
         int transferPriority = dataSet.optInt("transferPriority", 10);
 
         TransferControl transfer = new TransferControl(transferId, eventInfo.getSiteId());
-        transfer.setAssigned_robot_id("");
+        transfer.setTransfer_st(BaseConstants.Transfer.State.READY);
         transfer.setPriority_no(transferPriority);
         transfer.setSource_port_id(transferSource);
         transfer.setDestination_port_id(transferDest);
+        transfer.setAssigned_robot_id(transferRobot);
         
-//        baseService.save();
         baseService.saveOrUpdate(eventInfo, transfer);
         return result;
     }

@@ -1,0 +1,94 @@
+package com.hubis.acs.middleware;
+
+import com.hubis.acs.common.cache.MqttCache;
+import com.hubis.acs.common.configuration.thread.RobotWorkerThread;
+import com.hubis.acs.common.handler.BaseExecutorHandler;
+import com.hubis.acs.common.utils.JsonUtils;
+import com.hubis.acs.service.RobotService;
+import com.hubis.acs.service.WriterService;
+import lombok.RequiredArgsConstructor;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.messaging.Message;
+import org.springframework.stereotype.Component;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+
+@Component
+@RequiredArgsConstructor
+public class MiddlewareMessageHandler {
+
+    private static final Logger logger = LoggerFactory.getLogger(MiddlewareMessageHandler.class);
+
+    private final Map<String, Thread> workerThreads = new ConcurrentHashMap<>();
+
+    private final BaseExecutorHandler executor;
+    private final MqttCache mqttCache;
+    private final RobotService robotService;
+
+    public void handle(String topic, Message<?> message)
+    {
+        String[] parts = topic.split("/");
+
+        if (parts.length < 4) {
+            logger.warn("Invalid topic format: {}", topic);
+            return;
+        }
+
+        String category = parts[2]; // connection, state, task
+        String robotId = parts[1];
+
+        if(category.equals("connection"))
+            processMiddleWareHeartbeatMessage(message, robotId);
+        else
+            processMiddleWareMessages(message, robotId);
+
+    }
+
+    public void processMiddleWareHeartbeatMessage(Message<?> message, String robotId)
+    {
+        try {
+            JSONObject reqMsg = JsonUtils.validationMessageToJsonObject(message);
+
+            HashMap<String, Object> vehicleInfo = mqttCache.getMqttVehicle(robotId);
+
+            String tid = reqMsg.optString("tid");
+            long sentTime = (long) vehicleInfo.getOrDefault("heartbeat_tid", System.currentTimeMillis());
+            long rtt = Long.parseLong(reqMsg.optString("update_time")) - sentTime;
+            String siteId = (String)vehicleInfo.getOrDefault("siteId","HU");
+
+            mqttCache.addMqttVehicle(robotId, "response_tid", tid);
+            mqttCache.addMqttVehicle(robotId, "rtt", rtt);
+            mqttCache.addMqttVehicle(robotId, "connectionCount", 10);
+
+            robotService.refreshRobotConnectionStatus(robotId,siteId);
+
+        }catch (Exception ex){
+            ex.printStackTrace();
+        }
+    }
+
+    private void processMiddleWareMessages(Message<?> message, String robotId)
+    {
+        mqttCache.addMqttVehicleQueue(robotId, message);
+
+        handleMessageStartWorker(robotId);
+
+    }
+
+    private void handleMessageStartWorker(String robotId)
+    {
+
+        if (workerThreads.containsKey(robotId)) return;
+
+        RobotWorkerThread worker = new RobotWorkerThread(robotId, executor, mqttCache);
+        Thread thread = new Thread(worker, "Worker-" + robotId);
+        thread.start();
+
+        workerThreads.put(robotId, thread);
+    }
+}

@@ -4,9 +4,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hubis.acs.common.constants.BaseConstants;
 import com.hubis.acs.common.entity.vo.EventInfo;
-import com.hubis.acs.common.handler.CustomException;
+import com.hubis.acs.common.handler.exception.CustomException;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.springframework.messaging.Message;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -477,7 +478,7 @@ public class JsonUtils {
 	public static boolean jsonEquals(Object object) {
 		return object == null ||
 				(isJSONObject(object) && ((JSONObject) object).isEmpty()) || // JSONObject가 비어있는지 체크
-				JSONObject.NULL.equals(object) ||
+				org.json.JSONObject.NULL.equals(object) ||
 				"null".equals(object);
 	}
 
@@ -489,5 +490,30 @@ public class JsonUtils {
 	public static boolean isObject(Object obj)
 	{
 		return obj != null;
+	}
+
+	public static JSONObject validationMessageToJsonObject(Message<?> message)
+	{
+		try {
+			Object payload = message.getPayload();
+			String jsonStr;
+
+			if (payload instanceof String) {
+				jsonStr = (String) payload;
+			} else {
+				// JSON 문자열로 안전 변환
+				jsonStr = new ObjectMapper().writeValueAsString(payload);
+			}
+
+			JSONObject reqMsg = JsonUtils.toJson(jsonStr);
+			if (reqMsg == null) {
+				throw new RuntimeException("Invalid JSON");
+			}
+
+			return reqMsg;
+		}catch (Exception ex){
+			ex.printStackTrace();
+			return null;
+		}
 	}
 }

@@ -16,11 +16,11 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 @Component("MqttCache")
 public class MqttCache {
-    private static final Logger logger = LoggerFactory.getLogger(MqttCache.class);
+    private final Logger logger = LoggerFactory.getLogger(MqttCache.class);
 
-    private static ConcurrentHashMap<String, HashMap<String, Object>> mqttVehicleInfo;
-    public static HashMap<String, BlockingQueue<Message<?>>> commandVehicleQueue;
-    public static Queue<JSONObject> command;
+    private ConcurrentHashMap<String, HashMap<String, Object>> mqttVehicleInfo;
+    public HashMap<String, BlockingQueue<Message<?>>> commandVehicleQueue;
+    public Queue<JSONObject> command;
 
 
     @PostConstruct
@@ -41,21 +41,21 @@ public class MqttCache {
         }
     }
 
-    public static void addMqttVehicle(String vehicleId, String key, Object value) {
+    public void addMqttVehicle(String vehicleId, String key, Object value) {
         if (!mqttVehicleInfo.containsKey(vehicleId)) {
             mqttVehicleInfo.put(vehicleId, new HashMap<String, Object>());
         }
         mqttVehicleInfo.get(vehicleId).put(key, value);
     }
 
-    public static Object getMqttVehicle(String vehicleId, String key) {
+    public Object getMqttVehicleByKey(String vehicleId, String key) {
         if (mqttVehicleInfo.get(vehicleId) != null && mqttVehicleInfo.get(vehicleId).containsKey(key))
             return mqttVehicleInfo.get(vehicleId).get(key);
 
         return null;
     }
 
-    public static HashMap<String, Object> getMqttVehicle( String strVehicleId )
+    public HashMap<String, Object> getMqttVehicle( String strVehicleId )
     {
         if(!mqttVehicleInfo.containsKey(strVehicleId))
             return new HashMap<String,Object>();
@@ -64,7 +64,7 @@ public class MqttCache {
     }
 
 
-    public static HashMap<String, BlockingQueue<Message<?>>> getMqttVehicleQueue( String strVehicleId )
+    public HashMap<String, BlockingQueue<Message<?>>> getMqttVehicleQueue( String strVehicleId )
     {
         if(!commandVehicleQueue.containsKey(strVehicleId))
             return new HashMap<String, BlockingQueue<Message<?>>>();
@@ -72,15 +72,12 @@ public class MqttCache {
         return commandVehicleQueue;
     }
 
-    public static BlockingQueue<Message<?>> getMqttVehicleQueuePoll( String strVehicleId )
-    {
-        if(!commandVehicleQueue.containsKey(strVehicleId))
-            return new LinkedBlockingQueue<>(1000);
-
-        return commandVehicleQueue.get(strVehicleId);
+    public BlockingQueue<Message<?>> getMqttVehicleQueuePoll(String robotId) {
+        return commandVehicleQueue.computeIfAbsent(robotId, k -> new LinkedBlockingQueue<>(1000));
     }
 
-    public static void addMqttVehicleQueue( String strVehicleId , Message<?> command)
+
+    public void addMqttVehicleQueue( String strVehicleId , Message<?> command)
     {
         if(!commandVehicleQueue.containsKey(strVehicleId))
             commandVehicleQueue.put(strVehicleId, new LinkedBlockingQueue<>(1000));
@@ -88,11 +85,24 @@ public class MqttCache {
         commandVehicleQueue.get(strVehicleId).add(command);
     }
 
-    public static void removeMqttVehicleQueue( String strVehicleId )
+    public void removeMqttVehicleQueue( String strVehicleId )
     {
         if(!mqttVehicleInfo.containsKey(strVehicleId))
             return;
 
         commandVehicleQueue.remove(strVehicleId);
     }
+
+    public void updatePingState(String robotId, String tid) {
+        HashMap<String, Object> info = mqttVehicleInfo.computeIfAbsent(robotId, k -> new HashMap<>());
+        Integer count = (Integer) info.getOrDefault("connectionCount", 10);
+        info.put("connectionCount", Math.max(0, count - 1)); // 1씩 감소
+        info.put("heartbeat_tid", tid); // 1씩 감소
+    }
+
+    public void initializeSite(String robotId, String siteCd) {
+        HashMap<String, Object> info = mqttVehicleInfo.computeIfAbsent(robotId, k -> new HashMap<>());
+        info.put("siteId", siteCd); // 1씩 감소
+    }
+
 }
