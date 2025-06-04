@@ -32,7 +32,7 @@ public class RobotServiceImpl implements RobotService {
             robotMasterRepository.save(robot);
             log.info("Robot {} marked as usable again", robotId);
         }
-        else
+        else if (robot == null)
             log.info("Not Definition Robot : {}", robotId);
     }
 

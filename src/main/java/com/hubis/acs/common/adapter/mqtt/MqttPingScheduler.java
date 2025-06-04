@@ -37,7 +37,7 @@ public class MqttPingScheduler {
             String tid = TimeUtils.getCurrentTimekey();
 
             int count = (int) vehicleInfo.getOrDefault("connectionCount", 10);
-            int rtt = (int) vehicleInfo.getOrDefault("rtt", 0);
+            long rtt = (long) vehicleInfo.getOrDefault("rtt", 0L);
             mqttCache.updatePingState(robotId, tid);
             mqttCache.initializeSite(robotId, siteId);
             if (count == 0 && robot.getUsable_fl() == 1) {
@@ -49,11 +49,7 @@ public class MqttPingScheduler {
 
             JSONObject message = new JSONObject();
 
-            if(!responseTid.equals(vehicleInfo.get("heartbeat_tid")))
-                message.put("rtt", 0);
-            else
-                message.put("rtt",rtt);
-
+            message.put("rtt", rtt);
             message.put("connectionCount", count);
             message.put("tid", tid);
             message.put("update_time", tid);

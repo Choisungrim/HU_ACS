@@ -72,7 +72,16 @@ public class WriterService {
         publisher.publish(topics.toString(), reqMsg.toString());
     }
 
-    public void sendToJsonMiddleware(EventInfo eventInfo, String topic, JSONObject message) {
+    public void sendToJsonMiddleware(String txId, String task, String topic, String taskId, String robotId, String destination) {
+        JSONObject message = new JSONObject();
+
+        message.put("tid", txId);
+        message.put("update_time", txId);
+        message.put("task_system", "");
+        message.put("task_id", taskId);
+        message.put("task_behavior", task);
+        message.put("task_to",destination);
+
         publisher.publish(topic, message.toString());
     }
 

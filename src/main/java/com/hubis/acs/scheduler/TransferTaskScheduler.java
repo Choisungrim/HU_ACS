@@ -49,7 +49,7 @@ public class TransferTaskScheduler {
         Point localGrid = new Point(0, 0); // 로컬맵에서 (0,0) (그리드)
         Point globalMm = transform.toGlobal(localGrid); // 글로벌(mm 단위)
 
-        System.out.println(globalMm); // → (-1430.0, 2730.0)
+        // System.out.println(globalMm); // → (-1430.0, 2730.0)
     }
 
     private Point parsePoint(Point max, Point min) {

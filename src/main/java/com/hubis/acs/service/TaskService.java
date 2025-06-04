@@ -10,6 +10,7 @@ import com.hubis.acs.common.entity.vo.PortMasterId;
 import com.hubis.acs.common.utils.CommonUtils;
 import com.hubis.acs.common.utils.EventInfoBuilder;
 import com.hubis.acs.common.utils.TimeUtils;
+import com.hubis.acs.process.ProcessManager;
 import com.hubis.acs.repository.RobotMasterRepository;
 import com.hubis.acs.repository.TransferControlRepository;
 import com.hubis.acs.scheduler.TransferTaskScheduler;
@@ -37,17 +38,21 @@ public class TaskService {
     private final WriterService writerService;
     private final AsyncConfig asyncConfig;
     private final BaseConstantCache baseConstantCache;
+    private final ProcessManager processManager;
+
 
     public TaskService(TransferControlRepository transferRepository,
                        RobotMasterRepository robotMasterRepository,
                        BaseService baseService, WriterService writerService,
-                       AsyncConfig asyncConfig, BaseConstantCache baseConstantCache) {
+                       AsyncConfig asyncConfig, BaseConstantCache baseConstantCache,
+                       ProcessManager processManager) {
         this.transferRepository = transferRepository;
         this.robotMasterRepository = robotMasterRepository;
         this.baseService = baseService;
         this.writerService = writerService;
         this.asyncConfig = asyncConfig;
         this.baseConstantCache = baseConstantCache;
+        this.processManager = processManager;
     }
 
     public void assignReadyTransfers(String siteCd) {
@@ -114,18 +119,8 @@ public class TaskService {
             System.out.println("저장결과 로봇 :"+baseService.saveOrUpdate(eventInfo, selected));
             System.out.println("[INFO] 로봇 '" + selected.getRobot_id() + "' → 작업 '" + transfer.getTransfer_id() + "' 할당 완료");
 
-            JSONObject message = new JSONObject();
-            JSONObject task = new JSONObject();
-            message.put("tid", TimeUtils.getCurrentTimekey());
-            message.put("update_time", TimeUtils.getCurrentTime().toString());
-            message.put("task_system", "");
-            message.put("task",task);
-            task.put("task_id", transfer.getTransfer_id());
-            task.put("task_robot_id", selected.getRobot_id());
-            task.put("task_from",sourceNode.getNode_id());
-            task.put("task_to",destNode.getNode_id());
+            processManager.tryStartProcess(transfer.getTransfer_id(), selected.getRobot_id(), transfer.getSite_cd(), sourceNode.getNode_id(), destNode.getNode_id());
 
-            writerService.sendToJsonMiddleware(eventInfo, BaseConstants.TAG_NAME.MiddleWare+"/"+BaseConstants.TAG_NAME.Task+"/"+BaseConstants.TAG_NAME.Request, message);
 
         } else {
             System.out.println("[WARN] 로봇 선택 실패 (거리 계산 실패)");

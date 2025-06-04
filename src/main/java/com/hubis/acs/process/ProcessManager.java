@@ -1,0 +1,167 @@
+// ProcessManager.java
+package com.hubis.acs.process;
+
+import com.hubis.acs.common.cache.MqttCache;
+import com.hubis.acs.common.constants.BaseConstants;
+import com.hubis.acs.common.entity.TransferControl;
+import com.hubis.acs.common.entity.vo.EventInfo;
+import com.hubis.acs.common.handler.BaseExecutorHandler;
+import com.hubis.acs.common.utils.EventInfoBuilder;
+import com.hubis.acs.common.utils.TimeUtils;
+import com.hubis.acs.service.BaseService;
+import com.hubis.acs.service.WriterService;
+import lombok.RequiredArgsConstructor;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.*;
+
+@Component
+@RequiredArgsConstructor
+public class ProcessManager {
+
+    private static final Logger logger = LoggerFactory.getLogger(ProcessManager.class);
+    private final MqttCache mqttCache;
+    private final WriterService writerService;
+    private final BaseService baseService;
+    private final BaseExecutorHandler executor;
+    private final Map<String, ExecutorService> robotExecutors = new ConcurrentHashMap<>();
+    private final Map<String, ProcessFlowContext> processMap = new ConcurrentHashMap<>();
+    private final Map<String, EventInfo> eventInfoMap = new ConcurrentHashMap<>();
+    private final Map<String, JSONObject> reqMsgMap = new ConcurrentHashMap<>();
+    private final Set<String> runningRobots = ConcurrentHashMap.newKeySet();
+    private static final int MAX_RETRY = 3;
+    private static final int RESPONSE_TIMEOUT_SEC = 5;
+    private static final int STATE_TIMEOUT_MIN = 30;
+
+    public boolean tryStartProcess(String processId, String robotId, String siteId, String source, String dest) {
+        if (!runningRobots.add(robotId)) {
+            logger.warn("Robot {} is already running. Rejecting process {}", robotId, processId);
+            return false;
+        }
+
+        ExecutorService executor = robotExecutors.computeIfAbsent(
+                robotId,
+                key -> Executors.newSingleThreadExecutor()
+        );
+        ProcessFlowContext context = new ProcessFlowContext(processId, robotId, mqttCache, writerService);
+        processMap.put(processId, context);
+
+        executor.execute(() -> runProcess(context, source, dest));
+        return true;
+    }
+
+    private void runProcess(ProcessFlowContext ctx, String source, String dest) {
+        try {
+            executeWithRetry(() -> moveTask(ctx, TimeUtils.getCurrentTimekey(), source), BaseConstants.Task.MOVE, ctx);
+            executeWithRetry(() -> loadTask(ctx, TimeUtils.getCurrentTimekey(), source), BaseConstants.Task.LOAD, ctx);
+            executeWithRetry(() -> moveTask(ctx, TimeUtils.getCurrentTimekey(), dest), BaseConstants.Task.MOVE, ctx);
+            executeWithRetry(() -> unLoadTask(ctx, TimeUtils.getCurrentTimekey(), dest), BaseConstants.Task.UNLOAD, ctx);
+
+            jobCompleted(ctx, TimeUtils.getCurrentTimekey(), source, dest);
+
+            logger.info("Process {} completed for robot {}", ctx.getProcessId(), ctx.getRobotId());
+        } catch (Exception e) {
+            logger.error("Error in process {}: {}", ctx.getProcessId(), e.getMessage(), e);
+        } finally {
+            processMap.remove(ctx.getProcessId());
+            runningRobots.remove(ctx.getRobotId());
+        }
+    }
+
+    private void executeWithRetry(Runnable taskAction, String taskName, ProcessFlowContext ctx) {
+        int retryCount = 0;
+        while (retryCount < MAX_RETRY) {
+            try {
+                taskAction.run();
+                return;
+            } catch (Exception e) {
+                retryCount++;
+                logger.warn("Retry {} for task {} on process {}", retryCount, taskName, ctx.getProcessId());
+            }
+        }
+        throw new RuntimeException("Max retries exceeded for task: " + taskName);
+    }
+
+    public void moveTask(ProcessFlowContext ctx, String txId, String destination) {
+        ctx.prepareTask(TaskType.MOVE, txId);
+        ctx.sendTask(TaskType.MOVE, destination, txId);
+        if (!ctx.awaitResponse(TaskType.MOVE, RESPONSE_TIMEOUT_SEC)) {
+            throw new RuntimeException("MOVE task response timeout");
+        }
+        if (!ctx.awaitStateComplete(TaskType.MOVE, STATE_TIMEOUT_MIN)) {
+            throw new RuntimeException("MOVE task state complete timeout");
+        }
+    }
+
+    public void loadTask(ProcessFlowContext ctx, String txId, String destination) {
+        ctx.prepareTask(TaskType.LOAD, txId);
+        ctx.sendTask(TaskType.LOAD, destination, txId);
+        if (!ctx.awaitResponse(TaskType.LOAD, RESPONSE_TIMEOUT_SEC)) {
+            throw new RuntimeException("LOAD task response timeout");
+        }
+        if (!ctx.awaitStateComplete(TaskType.LOAD, STATE_TIMEOUT_MIN)) {
+            throw new RuntimeException("LOAD task state complete timeout");
+        }
+    }
+
+    public void unLoadTask(ProcessFlowContext ctx, String txId, String destination) {
+        ctx.prepareTask(TaskType.UNLOAD, txId);
+        ctx.sendTask(TaskType.UNLOAD, destination, txId);
+        if (!ctx.awaitResponse(TaskType.UNLOAD, RESPONSE_TIMEOUT_SEC)) {
+            throw new RuntimeException("UNLOAD task response timeout");
+        }
+        if (!ctx.awaitStateComplete(TaskType.UNLOAD, STATE_TIMEOUT_MIN)) {
+            throw new RuntimeException("UNLOAD task state complete timeout");
+        }
+    }
+
+    public void jobCompleted(ProcessFlowContext ctx, String txId, String source, String dest) {
+        try {
+            // Job completion logic placeholder
+            String processId = ctx.getProcessId();
+
+        } catch (Exception e) { logger.error("Error in process JOB {}: {}", ctx.getProcessId(), e.getMessage(), e); }
+    }
+
+    public void notifyResponse(String transactionId) {
+        processMap.values().forEach(ctx -> ctx.tryNotifyResponse(transactionId));
+    }
+
+    public void notifyState(String transactionId, String status) {
+        processMap.values().forEach(ctx -> ctx.tryNotifyState(transactionId, status));
+        executeHandler(eventInfoMap.get(transactionId), reqMsgMap.get(transactionId));
+
+        eventInfoMap.remove(transactionId); // 사용 후 정리
+        reqMsgMap.remove(transactionId);
+    }
+
+    private void executeHandler(EventInfo eventInfo, JSONObject reqMsg)
+    {
+        executor.execute(eventInfo, reqMsg, new JSONObject());
+    }
+
+    public void addEvent(EventInfo eventInfo, JSONObject reqMsg) {
+        String txId = eventInfo.getTransactionId();
+        eventInfoMap.put(txId, eventInfo);
+        reqMsgMap.put(txId, reqMsg);
+    }
+
+    public boolean isRobotRunning(String robotId) {
+        return runningRobots.contains(robotId);
+    }
+
+    public boolean tryRejectProcess(String processId) {
+        ProcessFlowContext ctx = processMap.remove(processId);
+        if (ctx != null) {
+            runningRobots.remove(ctx.getRobotId());
+            logger.warn("Forcefully rejected process {} for robot {}", processId, ctx.getRobotId());
+            return true;
+        }
+        return false;
+    }
+}

@@ -62,13 +62,19 @@ public class BaseConstants {
 
     public static class Task
     {
-        public final static String Move_Start = "move_start";
-        public final static String Move_Complete = "move_complete";
-        public final static String Load_Start = "load_start";
-        public final static String Load_Complete = "load_complete";
-        public final static String Unload_Start = "unload_start";
-        public final static String Unload_Complete = "unload_complete";
-        public final static String Job_Complete = "job_complete";
+        public final static String MOVE = "move";
+        public final static String LOAD = "load";
+        public final static String UNLOAD = "unload";
+        public static class State {
+            public final static String Move_Start = "move_start";
+            public final static String Move_Complete = "move_complete";
+            public final static String Load_Start = "load_start";
+            public final static String Load_Complete = "load_complete";
+            public final static String Unload_Start = "unload_start";
+            public final static String Unload_Complete = "unload_complete";
+            public final static String Job_Complete = "job_complete";
+
+        }
     }
 
     public static class Language
