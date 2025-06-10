@@ -21,6 +21,8 @@ public class ProcessFlowContext {
     private final String robotId;
     private final MqttCache mqttCache;
     private final WriterService writerService;
+    private volatile String currentDestination;
+    private volatile TaskType currentTask;
 
     private final Map<String, Map<String, String>> taskMap = new ConcurrentHashMap<>();
 
@@ -32,6 +34,11 @@ public class ProcessFlowContext {
         this.robotId = robotId;
         this.mqttCache = mqttCache;
         this.writerService = writerService;
+    }
+
+    public void setCurrentTask(TaskType task, String dest) {
+        this.currentTask = task;
+        this.currentDestination = dest;
     }
 
     public void prepareTask(TaskType task, String txId) {
@@ -46,13 +53,12 @@ public class ProcessFlowContext {
 
     public void sendTask(TaskType task, String destination, String txId) {
         taskMap.computeIfAbsent(processId, k -> new ConcurrentHashMap<>()).put(TaskType.DESTINATION.name(), destination);
-
         if (!responseLatches.containsKey(txId) || !stateLatches.containsKey(txId)) {
             logger.warn("Latch not prepared before sendTask for txId={}", txId);
         }
-
-
         logger.info("Sending task: {} with txId={} for robot={} (processId={})", task, txId, robotId, processId);
+
+        setCurrentTask(task,destination);
 
         StringBuilder topics = new StringBuilder();
         topics.append(BaseConstants.TAG_NAME.MiddleWare + "/");
@@ -112,5 +118,14 @@ public class ProcessFlowContext {
             }
         }
         else logger.warn("No COMPLETE latch found for txId={}", txId);
+    }
+
+
+    public String getCurrentDestination() {
+        return currentDestination;
+    }
+
+    public TaskType getCurrentTask() {
+        return currentTask;
     }
 }

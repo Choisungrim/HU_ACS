@@ -91,7 +91,7 @@ public class TaskService {
             availableRobots = robotMasterRepository.findAvailableRobotById(transfer.getAssigned_robot_id(),transfer.getSite_cd());
 
         if (availableRobots.isEmpty()) {
-            System.out.println("[WARN] 유효한 로봇 후보 없음");
+            log.warn("[WARN] 유효한 로봇 후보 없음");
             transerSetQueue(eventInfo,transfer);
             return;
         }
@@ -101,12 +101,12 @@ public class TaskService {
         List<RobotMaster> candidateRobots = filterRobotsInNodeMap(availableRobots, nodeMap.keySet());
 
         if (candidateRobots.isEmpty()) {
-            System.out.println("[WARN] 유효한 로봇 후보 없음");
+            log.warn("[WARN] 유효한 로봇 후보 없음");
             transerSetQueue(eventInfo,transfer);
             return;
         }
 
-        RobotMaster selected = selectNearestRobot(candidateRobots, nodeMap, sourcePoint);
+        RobotMaster selected = selectAndReserveRobot(candidateRobots, nodeMap, sourcePoint);
 
         if (selected != null) {
             transfer.setAssigned_robot_id(selected.getRobot_id());
@@ -204,13 +204,16 @@ public class TaskService {
                 .collect(Collectors.toList());
     }
 
-    private RobotMaster selectNearestRobot(List<RobotMaster> candidates, Map<String, NodeMaster> nodeMap, Point2D source) {
+    private RobotMaster selectAndReserveRobot(List<RobotMaster> candidates, Map<String, NodeMaster> nodeMap, Point2D source) {
+
         return candidates.stream()
                 .min(Comparator.comparingDouble(r -> {
                     NodeMaster node = nodeMap.get(r.getLocation_nm());
                     Point2D p = parsePoint(node.getPos_x_val(), node.getPos_y_val());
                     return (p != null) ? getDistance(source, p) : Double.MAX_VALUE;
                 }))
+                .filter(r -> processManager.reserveRobot(r.getRobot_id()))
+                .stream().findFirst()
                 .orElse(null);
     }
 

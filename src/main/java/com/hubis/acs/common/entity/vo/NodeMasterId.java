@@ -17,6 +17,7 @@ public class NodeMasterId implements Serializable {
     private String site_cd;
 
     public NodeMasterId() {}
+    public NodeMasterId(String node_id, Long map_uuid, String site_cd) { this.node_id = node_id; this.map_uuid = map_uuid; this.site_cd = site_cd; }
 
     @Override
     public boolean equals(Object o) {

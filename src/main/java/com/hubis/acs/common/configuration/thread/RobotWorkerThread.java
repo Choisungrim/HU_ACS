@@ -6,10 +6,8 @@ import com.hubis.acs.common.handler.BaseExecutorHandler;
 import com.hubis.acs.common.utils.EventInfoBuilder;
 import com.hubis.acs.common.utils.JsonUtils;
 import com.hubis.acs.common.utils.TimeUtils;
-import com.hubis.acs.process.ProcessManager;
 import com.hubis.acs.process.ProcessNotifyService;
 import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;
 
 import java.util.concurrent.BlockingQueue;
@@ -63,7 +61,7 @@ public class RobotWorkerThread implements Runnable {
 
                         break;
                     case "state":
-                        EventInfo eventInfo = handleState(reqMsg, requestId, subType, siteId);
+                        EventInfo eventInfo = handleState(reqMsg, requestId, subType, siteId, robotId);
                         executor.execute(eventInfo, reqMsg, new JSONObject());
                         break;
                     default:
@@ -105,21 +103,21 @@ public class RobotWorkerThread implements Runnable {
                 .addWorkId(workId)
                 .addWorkGroupId(requestId)
                 .addActivity(workId)
-                .addUserId(requestId)
+                .addUserId(robotId)
                 .addSiteId(siteId)
                 .build();
 
         processNotifyService.notifyState(transactionId, eventInfo, reqMsg, robotId);
     }
 
-    private EventInfo handleState(JSONObject reqMsg, String requestId, String subType, String siteId) {
+    private EventInfo handleState(JSONObject reqMsg, String requestId, String subType, String siteId, String robotId) {
         String workId = subType + "_change";
         return new EventInfoBuilder(TimeUtils.getCurrentTimekey())
                 .addRequestId(requestId)
                 .addWorkId(workId)
                 .addWorkGroupId(requestId)
                 .addActivity(workId)
-                .addUserId(requestId)
+                .addUserId(robotId)
                 .addSiteId(siteId)
                 .build();
     }

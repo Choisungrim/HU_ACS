@@ -1,8 +1,15 @@
-package com.hubis.acs.common.entity.local;
+package com.hubis.acs.common.position.model;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
 public class Point {
-    public final double x;
-    public final double y;
+    public double x;
+    public double y;
+
+    public Point() {}
 
     public Point(double x, double y) {
         this.x = x;

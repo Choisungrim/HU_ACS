@@ -10,7 +10,7 @@ import java.security.MessageDigest;
 import java.security.Security;
 
 public class Md5Crypto {
-    private static final String _key = "http://www.u-tech.com";
+    private static final String _key = "";
 
     public static String encrypt(String plaintext) throws Exception {
         Security.addProvider(new BouncyCastleProvider());

@@ -14,7 +14,8 @@ public class RobotMasterId implements Serializable {
 
     private String site_cd;
 
-    public RobotMasterId() {}
+    public RobotMasterId() { }
+    public RobotMasterId(String robot_id, String site_cd) {this.robot_id = robot_id;this.site_cd = site_cd; }
 
     @Override
     public boolean equals(Object o) {

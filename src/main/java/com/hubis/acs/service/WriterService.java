@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Map;
 
-@Service("WriterService")
+@Service
 public class WriterService {
 
     private final Publisher publisher;

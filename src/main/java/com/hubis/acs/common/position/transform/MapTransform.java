@@ -1,4 +1,7 @@
-package com.hubis.acs.common.entity.local;
+package com.hubis.acs.common.position.transform;
+
+import com.hubis.acs.common.position.model.Point;
+
 public class MapTransform {
     private final Point localOriginInGlobal;
     private final double rotationDeg;

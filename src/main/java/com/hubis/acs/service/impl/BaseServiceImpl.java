@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-@Service("BaseService")
+@Service
 @RequiredArgsConstructor
 class BaseServiceImpl implements BaseService {
 

@@ -1,13 +1,16 @@
 package com.hubis.acs.scheduler;
 
 import com.hubis.acs.common.cache.SiteCache;
-import com.hubis.acs.common.entity.local.MapTransform;
-import com.hubis.acs.common.entity.local.Point;
+import com.hubis.acs.common.position.handler.ZoneLockManager;
+import com.hubis.acs.common.position.transform.MapTransform;
+import com.hubis.acs.common.position.model.Point;
 import com.hubis.acs.service.TaskService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
+import java.util.Map;
 
 @Component
 public class TransferTaskScheduler {
@@ -15,11 +18,13 @@ public class TransferTaskScheduler {
 
     private final TaskService taskService;
     private final SiteCache siteCache;
+    private final ZoneLockManager zoneLockManager;
 
 
-    public TransferTaskScheduler(TaskService taskService, SiteCache siteCache) {
+    public TransferTaskScheduler(TaskService taskService, SiteCache siteCache, ZoneLockManager zoneLockManager) {
         this.taskService = taskService;
         this.siteCache = siteCache;
+        this.zoneLockManager = zoneLockManager;
     }
 
     @Scheduled(fixedDelay = 5000)
@@ -27,6 +32,18 @@ public class TransferTaskScheduler {
         for (String siteCd : siteCache.getSiteCdSet()) {
             try {
                 taskService.assignReadyTransfers(siteCd);
+
+                Map<String, String> siteZoneLocks = zoneLockManager.getLocksBySite(siteCd);
+                if (!siteZoneLocks.isEmpty()) {
+                    log.info("▶▶ Site [{}] Zone 점유 상태:", siteCd);
+                    siteZoneLocks.forEach((zoneId, robotId) -> {
+                        log.info(" - Zone [{}] → Robot [{}]", zoneId, robotId);
+                    });
+                } else {
+                    log.info("▶▶ Site [{}] 점유된 Zone 없음", siteCd);
+                }
+
+
             } catch (Exception e) {
                 log.error("[{}] 작업 할당 실패", siteCd, e);
             }

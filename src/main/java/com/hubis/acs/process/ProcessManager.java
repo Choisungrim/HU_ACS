@@ -3,10 +3,8 @@ package com.hubis.acs.process;
 
 import com.hubis.acs.common.cache.MqttCache;
 import com.hubis.acs.common.constants.BaseConstants;
-import com.hubis.acs.common.entity.TransferControl;
 import com.hubis.acs.common.entity.vo.EventInfo;
 import com.hubis.acs.common.handler.BaseExecutorHandler;
-import com.hubis.acs.common.utils.EventInfoBuilder;
 import com.hubis.acs.common.utils.TimeUtils;
 import com.hubis.acs.service.BaseService;
 import com.hubis.acs.service.WriterService;
@@ -16,9 +14,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -39,10 +39,6 @@ public class ProcessManager {
     private static final int STATE_TIMEOUT_MIN = 30;
 
     public boolean tryStartProcess(String processId, String robotId, String siteId, String source, String dest) {
-        if (!runningRobots.add(robotId)) {
-            logger.warn("Robot {} is already running. Rejecting process {}", robotId, processId);
-            return false;
-        }
 
         ExecutorService executor = robotExecutors.computeIfAbsent(
                 robotId,
@@ -151,10 +147,6 @@ public class ProcessManager {
         reqMsgMap.put(txId, reqMsg);
     }
 
-    public boolean isRobotRunning(String robotId) {
-        return runningRobots.contains(robotId);
-    }
-
     public boolean tryRejectProcess(String processId) {
         ProcessFlowContext ctx = processMap.remove(processId);
         if (ctx != null) {
@@ -164,4 +156,35 @@ public class ProcessManager {
         }
         return false;
     }
+
+    public String getCurrentDestination(String robotId) {
+        return processMap.values().stream()
+                .filter(ctx -> ctx.getRobotId().equals(robotId))
+                .map(ProcessFlowContext::getCurrentDestination)
+                .findFirst()
+                .orElse(null);
+    }
+
+    public RobotTaskStatus getCurrentTaskStatus(String robotId) {
+        return processMap.values().stream()
+                .filter(ctx -> ctx.getRobotId().equals(robotId))
+                .map(ctx -> new RobotTaskStatus(ctx.getCurrentTask(), ctx.getCurrentDestination()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public List<RobotTaskStatus> getAllRobotStatuses() {
+        return processMap.values().stream()
+                .map(ctx -> new RobotTaskStatus(ctx.getCurrentTask(), ctx.getCurrentDestination()))
+                .collect(Collectors.toList());
+    }
+
+    public boolean reserveRobot(String robotId) {
+        // 이미 실행 중이면 false 반환
+        return runningRobots.add(robotId);  // add()는 이미 존재하면 false 반환
+    }
+
+    public record RobotTaskStatus(TaskType task, String destination) {}
 }
+
+

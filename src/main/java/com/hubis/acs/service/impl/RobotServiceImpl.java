@@ -38,13 +38,7 @@ public class RobotServiceImpl implements RobotService {
 
     public void robotDisconnectionStatus(String robotId, String siteCd) {
 
-        RobotMasterId id = new RobotMasterId();
-
-        id.setRobot_id(robotId);
-        id.setSite_cd(siteCd);
-
-        RobotMaster robots = new RobotMaster(robotId, siteCd);
-
+        RobotMasterId id = new RobotMasterId(robotId, siteCd);
         RobotMaster robot = baseService.findById(RobotMaster.class, id);
 
         if (robot != null && robot.getUsable_fl() == BaseConstants.Usable.USABLE) {
