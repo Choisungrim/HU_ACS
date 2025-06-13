@@ -60,22 +60,35 @@ public class BaseConstants {
         public final static String WCS = "wcs";
     }
 
-    public static class Task
+    public static class ROBOT
     {
-        public final static String MOVE = "move";
-        public final static String LOAD = "load";
-        public final static String UNLOAD = "unload";
-        public static class State {
-            public final static String Move_Start = "move_start";
-            public final static String Move_Complete = "move_complete";
-            public final static String Load_Start = "load_start";
-            public final static String Load_Complete = "load_complete";
-            public final static String Unload_Start = "unload_start";
-            public final static String Unload_Complete = "unload_complete";
-            public final static String Job_Complete = "job_complete";
+        public static class Task
+        {
+            public final static String MOVE = "move";
+            public final static String LOAD = "load";
+            public final static String UNLOAD = "unload";
+            public static class State {
+                public final static String Move_Start = "move_start";
+                public final static String Move_Complete = "move_complete";
+                public final static String Load_Start = "load_start";
+                public final static String Load_Complete = "load_complete";
+                public final static String Unload_Start = "unload_start";
+                public final static String Unload_Complete = "unload_complete";
+                public final static String Job_Complete = "job_complete";
+
+            }
+        }
+
+        public static class STATE
+        {
+            public final static String RUNNING = "running";
+            public final static String LOADING = "loading";
+            public final static String UNLOADING = "unloading";
 
         }
     }
+
+
 
     public static class Language
     {
@@ -86,6 +99,7 @@ public class BaseConstants {
         public final static String Japan = "jp";
 
     }
+
 
 
     public static class Transfer
@@ -124,6 +138,15 @@ public class BaseConstants {
         public static class ConstCode
         {
             public final static String WORKABLE_ROBOT_BATTERY = "WORKABLE_ROBOT_BATTERY";
+        }
+    }
+
+    public static class Zone
+    {
+        public static class ZoneType
+        {
+            public final static String BLOCK = "block";
+
         }
     }
 }

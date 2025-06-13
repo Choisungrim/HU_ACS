@@ -1,6 +1,10 @@
 package com.hubis.acs.middleware.work;
 
+import com.hubis.acs.common.constants.BaseConstants;
+import com.hubis.acs.common.entity.RobotMaster;
+import com.hubis.acs.common.entity.vo.RobotMasterId;
 import com.hubis.acs.common.handler.impl.GlobalWorkHandler;
+import com.hubis.acs.common.utils.CommonUtils;
 import com.hubis.acs.ui.work.CreateTransferControl;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -13,7 +17,24 @@ public class MoveStart extends GlobalWorkHandler {
 
     @Override
     public String doWork(JSONObject message) throws Exception {
-        logger.info("MoveStart");
+        String robotId = eventInfo.getUserId();
+        String siteId = eventInfo.getSiteId();
+
+        RobotMaster robotKey = new RobotMaster(robotId, siteId);
+        RobotMaster robot = baseService.findByEntity(RobotMaster.class, robotKey);
+
+        if(CommonUtils.isNullOrEmpty(robot)) {
+            logger.warn("robot not found");
+            return BaseConstants.RETURNCODE.Fail;
+        }
+
+        if(CommonUtils.isNullOrEmpty(robot.getTransfer_id()))
+            logger.warn("robot Assigned Transfer not found");
+        
+        //상태 업데이트
+        robot.setStatus_tx(BaseConstants.ROBOT.STATE.RUNNING);
+        baseService.saveOrUpdate(eventInfo,robot);
+
         return result;
     }
 }

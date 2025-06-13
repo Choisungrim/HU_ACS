@@ -3,6 +3,7 @@ package com.hubis.acs.service;
 import com.hubis.acs.common.adapter.mqtt.Publisher;
 import com.hubis.acs.common.constants.BaseConstants;
 import com.hubis.acs.common.entity.vo.EventInfo;
+import com.hubis.acs.common.position.model.Position;
 import com.hubis.acs.common.utils.EventInfoBuilder;
 import com.hubis.acs.common.utils.JsonUtils;
 import org.json.JSONObject;
@@ -37,6 +38,25 @@ public class WriterService {
 
         msg.put(BaseConstants.TAG_NAME.Header, header);
         msg.put(BaseConstants.TAG_NAME.DataSet, new JSONObject());
+
+        publisher.publish(topic, msg.toString());
+    }
+
+    public void sendToUIPositionChange(EventInfo eventInfo, String returnCode, Position position) {
+        JSONObject msg = new JSONObject();
+        String topic = "web/backend/positionchange";
+
+        JSONObject header = makeHeader(eventInfo);
+        header.put(BaseConstants.TAG_NAME.ReturnCode, returnCode);
+
+        JSONObject dataSet = new JSONObject();
+        dataSet.put("x", position.getX());
+        dataSet.put("y", position.getY());
+        dataSet.put("deg", position.getTheta());
+
+        msg.put(BaseConstants.TAG_NAME.Header, header);
+        msg.put(BaseConstants.TAG_NAME.DataSet, dataSet);
+
 
         publisher.publish(topic, msg.toString());
     }

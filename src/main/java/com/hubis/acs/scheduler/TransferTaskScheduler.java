@@ -2,7 +2,6 @@ package com.hubis.acs.scheduler;
 
 import com.hubis.acs.common.cache.SiteCache;
 import com.hubis.acs.common.position.handler.ZoneLockManager;
-import com.hubis.acs.common.position.transform.MapTransform;
 import com.hubis.acs.common.position.model.Point;
 import com.hubis.acs.service.TaskService;
 import org.slf4j.Logger;
@@ -57,14 +56,14 @@ public class TransferTaskScheduler {
         //MaxPos: 6100 1620
         //Resolution: 1000
 
-        MapTransform transform = new MapTransform(
-                parsePoint(new Point(-3240,-7080), new Point(6100, 1620)),// localOriginInGlobal
-                0,                        // 회전 없음
-                1000.0                    // grid 1칸 = 1000
-        );
-
-        Point localGrid = new Point(0, 0); // 로컬맵에서 (0,0) (그리드)
-        Point globalMm = transform.toGlobal(localGrid); // 글로벌(mm 단위)
+//        MapTransform transform = new MapTransform(
+//                parsePoint(new Point(-3240,-7080), new Point(6100, 1620)),// localOriginInGlobal
+//                0,                        // 회전 없음
+//                1000.0                    // grid 1칸 = 1000
+//        );
+//
+//        Point localGrid = new Point(0, 0); // 로컬맵에서 (0,0) (그리드)
+//        Point globalMm = transform.toGlobal(localGrid); // 글로벌(mm 단위)
 
         // System.out.println(globalMm); // → (-1430.0, 2730.0)
     }

@@ -8,7 +8,9 @@ import com.hubis.acs.common.entity.vo.RobotMasterId;
 import com.hubis.acs.common.handler.impl.GlobalWorkHandler;
 import com.hubis.acs.common.position.cache.RobotPositionCache;
 import com.hubis.acs.common.position.model.GlobalZone;
+import com.hubis.acs.common.position.model.Point;
 import com.hubis.acs.common.position.model.Position;
+import com.hubis.acs.common.utils.PositionUtils;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,8 +29,6 @@ public class PositionChange extends GlobalWorkHandler {
 
     @Override
     public String doWork(JSONObject message) throws Exception {
-        System.out.println("working PositionChange");
-
         String robotId = eventInfo.getUserId();
         double x = message.getDouble("x");
         double y = message.getDouble("y");
@@ -36,32 +36,39 @@ public class PositionChange extends GlobalWorkHandler {
 
         Position newPos = new Position(x, y, deg);
 
-        // 이전 위치 가져오기
-        Position prevPos = robotPositionCache.get(robotId);
-        robotPositionCache.put(robotId, newPos);
-
         //map 가져오기
         RobotMasterId masterId = new RobotMasterId(robotId,eventInfo.getSiteId());
         RobotMaster robot = baseService.findById(RobotMaster.class, masterId);
 
         if(robot == null) { logger.warn("robot not found");  return BaseConstants.RETURNCODE.Fail;}
+
+        String modelNm = robot.getModel_nm();
         long mapuuid = robot.getMap_uuid();
+
+        // Local → Global 변환 적용
+        Point globalPoint = mapTransformManager.toGlobal(modelNm, PositionUtils.toPoint(newPos));
+        Position globalLatestPosition = PositionUtils.toPosition(globalPoint, newPos.getTheta());
+
+        // 이전 위치 가져오기
+        Position prevGlobalPos = robotPositionCache.get(robotId);
+        robotPositionCache.put(robotId, globalLatestPosition);
 
         // 목적지 기반 경로 블록 확인
         String destId = processManager.getCurrentDestination(robotId);
         NodeMasterId nodeId = new NodeMasterId(destId,mapuuid,eventInfo.getSiteId());
 
-        for (GlobalZone z : globalZoneManager.getZonesByMap(mapuuid)) {
-            System.out.println("Zone loaded: " + z.getZoneId() + ", x: [" + z.getMinX() + "," + z.getMaxX() + "], y: [" + z.getMinY() + "," + z.getMaxY() + "]");
-        }
+//        시스템 로그 용
+//        for (GlobalZone z : globalZoneManager.getZonesByMap(mapuuid)) {
+//            System.out.println("Zone loaded: " + z.getZoneId() + ", x: [" + z.getMinX() + "," + z.getMaxX() + "], y: [" + z.getMinY() + "," + z.getMaxY() + "]");
+//        }
 
         if (destId != null) {
             NodeMaster destPos = baseService.findById(NodeMaster.class, nodeId); // 또는 GoalMaster 등으로부터 Position을 추출
-            List<Position> path = generateSurroundingPath(newPos, 2.0, 1.0);
+            List<Position> path = generateSurroundingPath(globalLatestPosition, 200.0, 1.0);
 
             //점유 여부 검사
             if (pathValidator.isPathBlocked(eventInfo.getSiteId(), mapuuid, path, robotId)) {
-                logger.warn("Blocked path detected for robot {} from {} to {}", robotId, newPos, destPos);
+                logger.warn("Blocked path detected for robot {} from {} to {}", robotId, globalLatestPosition, destPos);
                 // 대기 또는 회피 트리거 삽입 가능
                 return result;
             }
@@ -69,9 +76,9 @@ public class PositionChange extends GlobalWorkHandler {
             //점유 수행
             for (GlobalZone zone : globalZoneManager.getZonesByMap(mapuuid)) {
 
-                boolean firstPosition = (prevPos == null);
-                boolean wasInZone = !firstPosition && zone.contains(prevPos);
-                boolean isInZone = zone.contains(newPos);
+                boolean firstPosition = (prevGlobalPos == null);
+                boolean wasInZone = !firstPosition && zone.contains(prevGlobalPos);
+                boolean isInZone = zone.contains(globalLatestPosition);
 
                 if (firstPosition && isInZone) {
                     boolean locked = zoneLockManager.lock(eventInfo.getSiteId(), zone.getZoneId(), robotId);
@@ -84,15 +91,18 @@ public class PositionChange extends GlobalWorkHandler {
                     logger.info("[{}] exited zone [{}]", robotId, zone.getZoneId());
                 }
                 else {
-                    logger.info("[{}] This zone has not been locked", robotId);
+                    logger.debug("[{}] This zone has not been locked", robotId);
                 }
             }
 
             // optional: blocked 영역 진입 여부
-            boolean isBlocked = globalZoneManager.isPositionBlocked(newPos, mapuuid);
+            boolean isBlocked = globalZoneManager.isPositionBlocked(globalLatestPosition, mapuuid);
             logger.debug("[{}] at ({},{}) isBlocked: {}", robotId, x, y, isBlocked);
         }
         else logger.warn("[{}] at ({},{}) is destination is null", robotId, x, y);
+
+
+        writerService.sendToUIPositionChange(eventInfo, BaseConstants.RETURNCODE.Success, globalLatestPosition);
 
         return result;
     }

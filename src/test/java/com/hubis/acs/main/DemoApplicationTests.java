@@ -1,12 +1,10 @@
 package com.hubis.acs.main;
 
 import com.hubis.acs.DemoApplication;
-import com.hubis.acs.common.entity.TransferControl;
 import com.hubis.acs.common.entity.vo.EventInfo;
 import com.hubis.acs.common.handler.BaseExecutorHandler;
 import com.hubis.acs.common.position.cache.RobotPositionCache;
 import com.hubis.acs.common.utils.EventInfoBuilder;
-import com.hubis.acs.repository.TransferControlRepository;
 import com.hubis.acs.service.BaseService;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;

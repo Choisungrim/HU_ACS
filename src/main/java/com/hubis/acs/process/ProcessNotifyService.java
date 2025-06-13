@@ -14,7 +14,6 @@ import java.util.concurrent.Executors;
 public class ProcessNotifyService {
     private final Map<String, ExecutorService> robotExecutors = new ConcurrentHashMap<>();
 
-
     private final ProcessManager processManager;
 
     public ProcessNotifyService(ProcessManager processManager) {

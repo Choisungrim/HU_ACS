@@ -9,6 +9,7 @@ import com.hubis.acs.common.entity.vo.NodeMasterId;
 import com.hubis.acs.common.entity.vo.PortMasterId;
 import com.hubis.acs.common.utils.CommonUtils;
 import com.hubis.acs.common.utils.EventInfoBuilder;
+import com.hubis.acs.common.utils.RuntimeUtils;
 import com.hubis.acs.common.utils.TimeUtils;
 import com.hubis.acs.process.ProcessManager;
 import com.hubis.acs.repository.RobotMasterRepository;
@@ -72,8 +73,8 @@ public class TaskService {
                 .addLanguage(BaseConstants.Language.Korean)
                 .build();
 
-        NodeMaster sourceNode = getSourceNodeFromTransfer(transfer);
-        NodeMaster destNode = getDestNodeFromTransfer(transfer);
+        NodeMaster sourceNode = RuntimeUtils.getSourceNodeFromTransfer(transfer, baseService);
+        NodeMaster destNode = RuntimeUtils.getDestNodeFromTransfer(transfer, baseService);
         if (sourceNode == null || destNode == null) return;
 
         Point2D sourcePoint = parsePoint(sourceNode.getPos_x_val(), sourceNode.getPos_y_val());
@@ -113,63 +114,16 @@ public class TaskService {
             transfer.setTransfer_st(BaseConstants.Transfer.State.RUNNING);
             System.out.println("저장결과 작업 :"+baseService.saveOrUpdate(eventInfo, transfer));
 
-            selected.setStatus_tx(BaseConstants.Transfer.State.RUNNING);
-//            selected.setTransfer_id(transfer.getTransfer_id());
+            selected.setTransfer_id(transfer.getTransfer_id());
 
             System.out.println("저장결과 로봇 :"+baseService.saveOrUpdate(eventInfo, selected));
             System.out.println("[INFO] 로봇 '" + selected.getRobot_id() + "' → 작업 '" + transfer.getTransfer_id() + "' 할당 완료");
 
             processManager.tryStartProcess(transfer.getTransfer_id(), selected.getRobot_id(), transfer.getSite_cd(), sourceNode.getNode_id(), destNode.getNode_id());
-
-
         } else {
             System.out.println("[WARN] 로봇 선택 실패 (거리 계산 실패)");
             transerSetQueue(eventInfo,transfer);
         }
-    }
-
-    private NodeMaster getSourceNodeFromTransfer(TransferControl transfer) {
-        PortMaster portId = new PortMaster();
-        portId.setPort_id(transfer.getSource_port_id());
-        portId.setSite_cd(transfer.getSite_cd());
-
-        PortMaster port = baseService.findByEntity(PortMaster.class, portId);
-        if (port == null) {
-            System.out.println("[ERROR] Port 정보 없음: " + transfer.getSource_port_id() + " / " + transfer.getSite_cd());
-            return null;
-        }
-
-        NodeMaster sourceNodeId = new NodeMaster();
-        sourceNodeId.setNode_id(port.getNode_id());
-        sourceNodeId.setSite_cd(port.getSite_cd());
-
-        NodeMaster sourceNode = baseService.findByEntity(NodeMaster.class, sourceNodeId);
-        if (sourceNode == null) {
-            System.out.println("[ERROR] Node 정보 없음: " + port.getNode_id());
-        }
-        return sourceNode;
-    }
-
-    private NodeMaster getDestNodeFromTransfer(TransferControl transfer) {
-        PortMaster portId = new PortMaster();
-        portId.setPort_id(transfer.getDestination_port_id());
-        portId.setSite_cd(transfer.getSite_cd());
-
-        PortMaster port = baseService.findByEntity(PortMaster.class, portId);
-        if (port == null) {
-            System.out.println("[ERROR] Port 정보 없음: " + transfer.getDestination_port_id() + " / " + transfer.getSite_cd());
-            return null;
-        }
-
-        NodeMaster destNodeId = new NodeMaster();
-        destNodeId.setNode_id(port.getNode_id());
-        destNodeId.setSite_cd(port.getSite_cd());
-
-        NodeMaster destNode = baseService.findByEntity(NodeMaster.class, destNodeId);
-        if (destNode == null) {
-            System.out.println("[ERROR] Node 정보 없음: " + port.getNode_id());
-        }
-        return destNode;
     }
 
     private Map<String, NodeMaster> getAvailableRobotsInSameMap(List<RobotMaster> robotlst, Long mapUuid, String siteCd) {

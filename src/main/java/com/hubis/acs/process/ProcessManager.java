@@ -38,7 +38,7 @@ public class ProcessManager {
     private static final int RESPONSE_TIMEOUT_SEC = 5;
     private static final int STATE_TIMEOUT_MIN = 30;
 
-    public boolean tryStartProcess(String processId, String robotId, String siteId, String source, String dest) {
+    public void tryStartProcess(String processId, String robotId, String siteId, String source, String dest) {
 
         ExecutorService executor = robotExecutors.computeIfAbsent(
                 robotId,
@@ -48,15 +48,14 @@ public class ProcessManager {
         processMap.put(processId, context);
 
         executor.execute(() -> runProcess(context, source, dest));
-        return true;
     }
 
     private void runProcess(ProcessFlowContext ctx, String source, String dest) {
         try {
-            executeWithRetry(() -> moveTask(ctx, TimeUtils.getCurrentTimekey(), source), BaseConstants.Task.MOVE, ctx);
-            executeWithRetry(() -> loadTask(ctx, TimeUtils.getCurrentTimekey(), source), BaseConstants.Task.LOAD, ctx);
-            executeWithRetry(() -> moveTask(ctx, TimeUtils.getCurrentTimekey(), dest), BaseConstants.Task.MOVE, ctx);
-            executeWithRetry(() -> unLoadTask(ctx, TimeUtils.getCurrentTimekey(), dest), BaseConstants.Task.UNLOAD, ctx);
+            executeWithRetry(() -> moveTask(ctx, TimeUtils.getCurrentTimekey(), source), BaseConstants.ROBOT.Task.MOVE, ctx);
+            executeWithRetry(() -> loadTask(ctx, TimeUtils.getCurrentTimekey(), source), BaseConstants.ROBOT.Task.LOAD, ctx);
+            executeWithRetry(() -> moveTask(ctx, TimeUtils.getCurrentTimekey(), dest), BaseConstants.ROBOT.Task.MOVE, ctx);
+            executeWithRetry(() -> unLoadTask(ctx, TimeUtils.getCurrentTimekey(), dest), BaseConstants.ROBOT.Task.UNLOAD, ctx);
 
             jobCompleted(ctx, TimeUtils.getCurrentTimekey(), source, dest);
 
@@ -129,8 +128,8 @@ public class ProcessManager {
     }
 
     public void notifyState(String transactionId, String status) {
-        processMap.values().forEach(ctx -> ctx.tryNotifyState(transactionId, status));
         executeHandler(eventInfoMap.get(transactionId), reqMsgMap.get(transactionId));
+        processMap.values().forEach(ctx -> ctx.tryNotifyState(transactionId, status));
 
         eventInfoMap.remove(transactionId); // 사용 후 정리
         reqMsgMap.remove(transactionId);

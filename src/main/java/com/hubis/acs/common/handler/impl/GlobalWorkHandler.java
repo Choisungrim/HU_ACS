@@ -6,6 +6,7 @@ import com.hubis.acs.common.entity.vo.EventInfo;
 import com.hubis.acs.common.handler.GlobalWorkHandlerIF;
 import com.hubis.acs.common.position.handler.GlobalZoneManager;
 import com.hubis.acs.common.position.handler.ZoneLockManager;
+import com.hubis.acs.common.position.transform.MapTransformManager;
 import com.hubis.acs.common.position.zone.PathValidator;
 import com.hubis.acs.process.ProcessManager;
 import com.hubis.acs.repository.dao.CommonDAO;
@@ -31,6 +32,7 @@ public class GlobalWorkHandler implements GlobalWorkHandlerIF {
     protected GlobalZoneManager globalZoneManager;
     protected ZoneLockManager zoneLockManager;
     protected PathValidator pathValidator;
+    protected MapTransformManager mapTransformManager;
 
 
     public String result = BaseConstants.RETURNCODE.Success;
@@ -51,5 +53,6 @@ public class GlobalWorkHandler implements GlobalWorkHandlerIF {
         this.globalZoneManager = appContext.getBean(GlobalZoneManager.class);
         this.zoneLockManager = appContext.getBean(ZoneLockManager.class);
         this.pathValidator = appContext.getBean(PathValidator.class);
+        this.mapTransformManager = appContext.getBean(MapTransformManager.class);
     }
 }
