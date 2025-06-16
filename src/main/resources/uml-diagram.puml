@@ -1,13 +1,484 @@
 @startuml
-class AppConfig {
-    @Bean 
-    +restTemplate(): RestTemplate
+MqttPingScheduler --> WriterService : has
+MqttPingScheduler --> MqttCache : has
+MqttPingScheduler --> RobotService : has
+Publisher --> MqttConfig : has
+Receiver --> BaseMessageHandler : has
+SimpleChannelInboundHandler <|-- PLCClientHandler : extends
+SimpleChannelInboundHandler <|-- PLCServerHandler : extends
+PLCServerHandler --> PLCDataHandler : has
+SimpleChannelInboundHandler <|-- TcpClientHandler : extends
+SimpleChannelInboundHandler <|-- TcpServerHandler : extends
+BaseConstantCache --> BaseService : has
+SiteCache --> BaseService : has
+BaseExecutorHandler --> CommonDAO : has
+BaseExecutorHandler --> WriterService : has
+BaseMessageHandler --> MiddlewareMessageHandler : has
+BaseMessageHandler --> UiMessageHandler : has
+GlobalWorkHandler ..|> GlobalWorkHandlerIF : implements
+interface GlobalWorkHandlerIF {
+    +doWork(message: JSONObject): String
+    +doInit(appContext: ApplicationContext, commonDAO: CommonDAO, eventInfo: EventInfo): void
 }
+GlobalWorkHandler --> CommonDAO : has
+GlobalWorkHandler --> EventInfo : has
+GlobalWorkHandler --> BaseService : has
+GlobalWorkHandler --> WriterService : has
+GlobalWorkHandler --> ProcessManager : has
+GlobalWorkHandler --> GlobalZoneManager : has
+GlobalWorkHandler --> ZoneLockManager : has
+GlobalWorkHandler --> PathValidator : has
+GlobalWorkHandler --> MapTransformManager : has
+MapTransformManager --> BaseConstantCache : has
+PathValidator --> GlobalZoneManager : has
+PathValidator --> ZoneLockManager : has
+MiddlewareMessageHandler --> BaseExecutorHandler : has
+MiddlewareMessageHandler --> MqttCache : has
+MiddlewareMessageHandler --> RobotService : has
+MiddlewareMessageHandler --> ProcessNotifyService : has
+GlobalWorkHandler <|-- AlarmChange : extends
+GlobalWorkHandler <|-- BatteryChange : extends
+GlobalWorkHandler <|-- LoadComplete : extends
+LoadComplete --> MqttCache : has
+GlobalWorkHandler <|-- LoadStart : extends
+GlobalWorkHandler <|-- LocationChange : extends
+GlobalWorkHandler <|-- ModeChange : extends
+GlobalWorkHandler <|-- MoveComplete : extends
+MoveComplete --> RobotPositionCache : has
+GlobalWorkHandler <|-- MoveStart : extends
+GlobalWorkHandler <|-- PositionChange : extends
+PositionChange --> RobotPositionCache : has
+GlobalWorkHandler <|-- SensorChange : extends
+SensorChange --> MqttCache : has
+GlobalWorkHandler <|-- TopModuleChange : extends
+TopModuleChange --> MqttCache : has
+GlobalWorkHandler <|-- UnloadComplete : extends
+GlobalWorkHandler <|-- UnloadStart : extends
+ProcessManager --> MqttCache : has
+ProcessManager --> WriterService : has
+ProcessManager --> BaseService : has
+ProcessManager --> BaseExecutorHandler : has
+ProcessNotifyService --> ProcessManager : has
+TransferTaskScheduler --> TaskService : has
+TransferTaskScheduler --> SiteCache : has
+TransferTaskScheduler --> ZoneLockManager : has
+AlgorithmServiceImpl ..|> AlgorithmService : implements
+interface AlgorithmService {
+    +aStarSearch(startX: int, startY: int, endX: int, endY: int, grid: boolean[][]): List<Node>
+}
+BaseServiceImpl ..|> BaseService : implements
+interface BaseService {
+    +delete(clazz: Class<T>, id: Object): boolean
+    +save(eventInfo: EventInfo, entity: T): boolean
+    +findById(clazz: Class<T>, id: Object): T
+    +saveOrUpdate(eventInfo: EventInfo, entity: T): boolean
+    +findByConditions(clazz: Class<T>, example: T): List<T>
+    +findByEntity(clazz: Class<T>, id: T): T
+    +findByField(clazz: Class<T>, field: String, value: Object): List<T>
+}
+BaseServiceImpl --> CommonDAO : has
+RobotServiceImpl ..|> RobotService : implements
+interface RobotService {
+    +refreshRobotConnectionStatus(robotId: String, siteCd: String): void
+    +robotDisconnectionStatus(robotId: String, siteCd: String): void
+    +findAllRobots(): List<RobotMaster>
+}
+RobotServiceImpl --> RobotMasterRepository : has
+RobotServiceImpl --> BaseService : has
+TransferServiceImpl ..|> TransferService : implements
+interface TransferService {
+    +pathFinding(agentCount: int): void
+}
+TransferServiceImpl --> AgentPathVisualizer : has
+TransferServiceImpl --> AlgorithmService : has
+ZoneServiceImpl ..|> ZoneService : implements
+interface ZoneService {
+    +loadAllZones(): void
+    +reloadZonesByMap(mapUuid: Long): void
+}
+ZoneServiceImpl --> ZoneMasterRepository : has
+ZoneServiceImpl --> GlobalZoneManager : has
+ZoneServiceImpl --> BaseService : has
+TaskService --> TransferControlRepository : has
+TaskService --> RobotMasterRepository : has
+TaskService --> BaseService : has
+TaskService --> WriterService : has
+TaskService --> AsyncConfig : has
+TaskService --> BaseConstantCache : has
+TaskService --> ProcessManager : has
+WriterService --> Publisher : has
+UiMessageHandler --> BaseExecutorHandler : has
+UiMessageHandler --> WriterService : has
+GlobalWorkHandler <|-- CreateTransferControl : extends
+package "Common-Adapter" {
+class MqttPingScheduler {
+    -WriterService writerService
+    -MqttCache mqttCache
+    -RobotService robotService
+    @Scheduled 
+    +sendPing(): void
+}
+class Publisher {
+    -MessageHandler mqttHandler
+    -MqttConfig mqttConfig
+    -boolean reconnecting
+    -boolean lastConnected
+    +publish(topic: String, message: String): void
+    -startReconnectWatcher(): void
+    +isLastConnected(): boolean
+}
+class Receiver {
+    -BaseMessageHandler baseMessageHandler
+    @ServiceActivator 
+    +mqttMessageHandler(message: Message<?>): void
+}
+class PLCClientHandler {
+    #channelRead0(ctx: ChannelHandlerContext, msg: String): void
+    +exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): void
+}
+class PLCDataHandler {
+    -String dataFormat
+    -ObjectMapper objectMapper
+    -parseJSON(jsonData: String): Optional<String>
+    +parseData(rawData: String): Optional<String>
+    +formatResponse(status: String): String
+    -parseXML(xmlData: String): Optional<String>
+    -parseModbus(modbusData: String): Optional<String>
+}
+class PLCServerHandler {
+    -PLCDataHandler plcDataHandler
+    #channelRead0(ctx: ChannelHandlerContext, msg: String): void
+    +exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): void
+}
+class TcpClientHandler {
+    #channelRead0(ctx: ChannelHandlerContext, msg: String): void
+    +exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): void
+}
+class TcpServerHandler {
+    #channelRead0(ctx: ChannelHandlerContext, msg: String): void
+    +exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): void
+}
+}
+package "Common-Cache" {
+class BaseConstantCache {
+    -Logger log
+    -BaseService baseService
+    -Map constMap
+    +get(siteCd: String, constantTp: String, constantCd: String): ConstMaster
+    -load(): void
+    @PostConstruct 
+    +init(): void
+    +reload(): void
+    -generateKey(siteCd: String, constantTp: String, constantCd: String): String
+    +getConstMap(): Map<String, ConstMaster>
+}
+class MqttCache {
+    -Logger logger
+    -ConcurrentHashMap mqttVehicleInfo
+    +HashMap commandVehicleQueue
+    +Queue command
+    @PostConstruct 
+    +initialize(): void
+    +getMqttVehicleByKey(vehicleId: String, key: String): Object
+    +getMqttVehicleQueue(strVehicleId: String): HashMap<String, Message<?>>>
+    +getMqttVehicleQueuePoll(robotId: String): BlockingQueue<Message<?>>
+    +addMqttVehicleQueue(strVehicleId: String, command: Message<?>): void
+    +removeMqttVehicleQueue(strVehicleId: String): void
+    +getMqttVehicle(strVehicleId: String): HashMap<String, Object>
+    +initializeSite(robotId: String, siteCd: String): void
+    +updatePingState(robotId: String, tid: String): void
+    +addMqttVehicle(vehicleId: String, key: String, value: Object): void
+}
+class SiteCache {
+    -BaseService baseService
+    -Set siteCdSet
+    +load(): void
+    +contains(siteCd: String): boolean
+    @PostConstruct 
+    +init(): void
+    +reload(): void
+    +getSiteCdSet(): Set<String>
+}
+}
+package "Common-Handler" {
+class BaseExecutorHandler {
+    -Logger logger
+    -CommonDAO commonDAO
+    -ApplicationContext appContext
+    -WriterService writerService
+    +execute(eventInfo: EventInfo, reqMsg: JSONObject, repMsg: JSONObject): String
+    +executeByACS(reqMsg: JSONObject): void
+    -notifyUIResponse(eventInfo: EventInfo, returnCode: String): void
+}
+class BaseMessageHandler {
+    -Logger logger
+    -MiddlewareMessageHandler middlewareMessageHandler
+    -UiMessageHandler uiMessageHandler
+    +handle(msg: Message<?>, client: String): void
+}
+class BaseWorkHandlerRegistry {
+    -ApplicationContext context
+    -Map handlerMap
+    @PostConstruct 
+    +init(): void
+    +getHandler(group: String, workId: String): GlobalWorkHandlerIF
+}
+class GlobalWorkHandler <<GlobalWorkHandlerIF>> {
+    #ApplicationContext appContext
+    #CommonDAO commonDAO
+    #EventInfo eventInfo
+    #BaseService baseService
+    #WriterService writerService
+    #ProcessManager processManager
+    #GlobalZoneManager globalZoneManager
+    #ZoneLockManager zoneLockManager
+    #PathValidator pathValidator
+    #MapTransformManager mapTransformManager
+    +String result
+    +doWork(message: JSONObject): String
+    +doInit(appContext: ApplicationContext, commonDAO: CommonDAO, eventInfo: EventInfo): void
+}
+}
+package "Common-Loader" {
+class BaseWorkClassLoader {
+    -Logger logger
+    #Map lstWorkClass
+    -Object lockObject
+    @PostConstruct 
+    +initialize(): void
+    +initWorkClass(baseWorkClass: Class<?>, workPackage: String): void
+    -initWorkClass(objName: String, grpName: String, clsName: String): void
+    -initWorkClass(): void
+    +getWorkObject(workGroupId: String, workId: String): GlobalWorkHandlerIF
+}
+}
+package "Common-Position" {
+class RobotPositionCache {
+    -Map map
+    +get(robotId: String): Position
+    +put(robotId: String, pos: Position): void
+}
+class GlobalZoneManager {
+    -Map zoneMapByMap
+    +getZone(mapUuid: Long, zoneId: String): GlobalZone
+    +registerZone(mapUuid: Long, zone: GlobalZone): void
+    +setZoneBlocked(mapUuid: Long, zoneId: String, blocked: boolean): void
+    +getAllZones(): Collection<GlobalZone>
+    +getAllMapUuids(): Set<Long>
+    +getZonesByMap(mapUuid: Long): Collection<GlobalZone>
+    +isPositionBlocked(pos: Position, mapUuid: Long): boolean
+    +registerZones(mapUuid: Long, zones: Collection<GlobalZone>): void
+}
+class ZoneLockManager {
+    -ConcurrentHashMap lockedZones
+    +lock(siteCd: String, zoneId: String, robotId: String): boolean
+    +release(siteCd: String, zoneId: String, robotId: String): void
+    +isLocked(siteCd: String, zoneId: String): boolean
+    +getLockOwner(siteCd: String, zoneId: String): String
+    +getLocksBySite(siteCd: String): Map<String, String>
+    +getAllLocks(): Map<String, String>>
+}
+class MapTransformManager {
+    -String siteCd
+    -Logger logger
+    -Map transformByModel
+    -BaseConstantCache constantCache
+    -ObjectMapper objectMapper
+    @PostConstruct 
+    +init(): void
+    -findTransformForModel(modelNm: String): MapTransform
+    +toLocal(modelNm: String, globalPoint: Point): Point
+    +registerTransform(modelNm: String, origin: Point, rotationDeg: double, resolution: double): void
+    -defaultTransform(): MapTransform
+    +toGlobal(modelNm: String, localPoint: Point): Point
+}
+class PathValidator {
+    -GlobalZoneManager zoneManager
+    -ZoneLockManager lockManager
+    +isPathBlocked(siteId: String, mapuuid: long, path: List<Position>, robotId: String): boolean
+}
+}
+package "Controller" {
+class restController {
+}
+}
+package "Middleware" {
+class MiddlewareMessageHandler {
+    -Logger logger
+    -DateTimeFormatter TID_FORMAT
+    -Map workerThreads
+    -BaseExecutorHandler executor
+    -MqttCache mqttCache
+    -RobotService robotService
+    -ProcessNotifyService processNotifyService
+    +handle(topic: String, message: Message<?>): void
+    -handleMessageStartWorker(robotId: String): void
+    +processMiddleWareHeartbeatMessage(message: Message<?>, robotId: String): void
+    -processMiddleWareMessages(message: Message<?>, robotId: String): void
+    -calculate(reqTid: String, resTid: String): long
+}
+class AlarmChange {
+    -Logger logger
+    +doWork(message: JSONObject): String
+}
+class BatteryChange {
+    -Logger logger
+    +doWork(message: JSONObject): String
+}
+class LoadComplete {
+    -Logger logger
+    -MqttCache mqttCache
+    +doWork(message: JSONObject): String
+    -checkTowing(robotId: String): boolean
+    -checkConveyor(robotId: String): boolean
+    -checkLift(robotId: String): boolean
+    -isStateValidate(target: String): boolean
+}
+class LoadStart {
+    -Logger logger
+    +doWork(message: JSONObject): String
+}
+class LocationChange {
+    -Logger logger
+    +doWork(message: JSONObject): String
+}
+class ModeChange {
+    -Logger logger
+    +doWork(message: JSONObject): String
+}
+class MoveComplete {
+    -Logger logger
+    -RobotPositionCache robotPositionCache
+    +doWork(message: JSONObject): String
+    -isWithinTolerance(robotX: double, robotY: double, targetX: double, targetY: double, tolerance: double): boolean
+}
+class MoveStart {
+    -Logger logger
+    +doWork(message: JSONObject): String
+}
+class PositionChange {
+    -Logger logger
+    -RobotPositionCache robotPositionCache
+    -generateSurroundingPath(center: Position, radius: double, step: double): List<Position>
+    +doWork(message: JSONObject): String
+}
+class SensorChange {
+    -Logger logger
+    -MqttCache mqttCache
+    +doWork(message: JSONObject): String
+}
+class TopModuleChange {
+    -Logger logger
+    -Map ROBOT_TYPE_FIELD_MAP
+    -MqttCache mqttCache
+    -handleTopModuleState(robotId: String, siteId: String, reqMsg: JSONObject): void
+    +doWork(message: JSONObject): String
+}
+class UnloadComplete {
+    -Logger logger
+    +doWork(message: JSONObject): String
+}
+class UnloadStart {
+    -Logger logger
+    +doWork(message: JSONObject): String
+}
+}
+package "Process" {
+class ProcessManager {
+    -Logger logger
+    -MqttCache mqttCache
+    -WriterService writerService
+    -BaseService baseService
+    -BaseExecutorHandler executor
+    -Map robotExecutors
+    -Map processMap
+    -Map eventInfoMap
+    -Map reqMsgMap
+    -Set runningRobots
+    -int MAX_RETRY
+    -int RESPONSE_TIMEOUT_SEC
+    -int STATE_TIMEOUT_MIN
+    +getCurrentDestination(robotId: String): String
+    +getAllRobotStatuses(): List<ProcessManager$RobotTaskStatus>
+    +getCurrentTaskStatus(robotId: String): RobotTaskStatus
+    +jobCompleted(ctx: ProcessFlowContext, txId: String, source: String, dest: String): void
+    -executeWithRetry(taskAction: Runnable, taskName: String, ctx: ProcessFlowContext): void
+    +unLoadTask(ctx: ProcessFlowContext, txId: String, destination: String): void
+    +loadTask(ctx: ProcessFlowContext, txId: String, destination: String): void
+    +moveTask(ctx: ProcessFlowContext, txId: String, destination: String): void
+    -runProcess(ctx: ProcessFlowContext, source: String, dest: String): void
+    -executeHandler(eventInfo: EventInfo, reqMsg: JSONObject): void
+    +addEvent(eventInfo: EventInfo, reqMsg: JSONObject): void
+    +reserveRobot(robotId: String): boolean
+    +tryStartProcess(processId: String, robotId: String, siteId: String, source: String, dest: String): void
+    +tryRejectProcess(processId: String): boolean
+    +notifyResponse(transactionId: String): void
+    +notifyState(transactionId: String, status: String): void
+}
+class ProcessNotifyService {
+    -Map robotExecutors
+    -ProcessManager processManager
+    -getExecutor(robotId: String): ExecutorService
+    +notifyResponse(txId: String, robotId: String): void
+    +notifyState(txId: String, info: EventInfo, reqMsg: JSONObject, robotId: String): void
+}
+}
+package "Repository" {
+class CommonDAO {
+    -EntityManager entityManager
+    +update(entity: T): boolean
+    +insert(entity: T): boolean
+    +delete(clazz: Class<T>, id: Object): boolean
+    +selectOne(clazz: Class<T>, example: T): T
+    -isInvalidValue(value: Object, field: Field): boolean
+    -getAllFields(clazz: Class<?>): List<Field>
+    +selectOneById(clazz: Class<T>, primaryId: Object): T
+    +selectList(clazz: Class<T>, example: T): List<T>
+    +selectList(clazz: Class<T>, field: String, value: Object): List<T>
+}
+}
+package "Scheduler" {
+class TransferTaskScheduler {
+    -Logger log
+    -TaskService taskService
+    -SiteCache siteCache
+    -ZoneLockManager zoneLockManager
+    +test(): void
+    @Scheduled 
+    +scheduleTransferAssignments(): void
+    -parsePoint(max: Point, min: Point): Point
+}
+}
+package "Service" {
 class AlgorithmServiceImpl <<AlgorithmService>> {
     -isValid(x: int, y: int, grid: boolean[][]): boolean
-    -calculateHeuristic(x1: int, y1: int, x2: int, y2: int): int
     -reconstructPath(node: Node): List<Node>
+    -calculateHeuristic(x1: int, y1: int, x2: int, y2: int): int
     +aStarSearch(startX: int, startY: int, endX: int, endY: int, grid: boolean[][]): List<Node>
+}
+class BaseServiceImpl <<BaseService>> {
+    -CommonDAO commonDAO
+    @Transactional 
+    +delete(clazz: Class<T>, id: Object): boolean
+    @Transactional 
+    +save(eventInfo: EventInfo, entity: T): boolean
+    +findById(clazz: Class<T>, id: Object): T
+    @Transactional 
+    +saveOrUpdate(eventInfo: EventInfo, entity: T): boolean
+    +findByConditions(clazz: Class<T>, example: T): List<T>
+    +findByEntity(clazz: Class<T>, entity: T): T
+    +findByField(clazz: Class<T>, field: String, value: Object): List<T>
+    -extractPrimaryKey(entity: Object): Object
+    -setCommonModule(eventInfo: EventInfo, entity: Object, isNew: boolean): void
+    -saveByHist(): void
+}
+class RobotServiceImpl <<RobotService>> {
+    -Logger log
+    -RobotMasterRepository robotMasterRepository
+    -BaseService baseService
+    +refreshRobotConnectionStatus(robotId: String, siteCd: String): void
+    +robotDisconnectionStatus(robotId: String, siteCd: String): void
+    +findAllRobots(): List<RobotMaster>
 }
 class TransferServiceImpl <<TransferService>> {
     -Logger logger
@@ -16,28 +487,60 @@ class TransferServiceImpl <<TransferService>> {
     -Timer visualizationTimer
     -List sharedGlobalPaths
     ~AlgorithmService algorithmService
-    +pathFinding(agentCount: int): void
     -getOtherAgentPaths(positions: List<Node>, currentIndex: int): List<Node>
+    +pathFinding(agentCount: int): void
 }
-interface EnhancedConfiguration {
+class ZoneServiceImpl <<ZoneService>> {
+    -Logger logger
+    -ZoneMasterRepository zoneRepo
+    -GlobalZoneManager zoneManager
+    -BaseService baseService
+    @PostConstruct 
+    +init(): void
+    +loadAllZones(): void
+    +reloadZonesByMap(mapUuid: Long): void
 }
-interface AlgorithmService {
-    +aStarSearch(int, int, int, int, boolean[][]): List<Node>
+class TaskService {
+    -Logger log
+    -TransferControlRepository transferRepository
+    -RobotMasterRepository robotMasterRepository
+    -BaseService baseService
+    -WriterService writerService
+    -AsyncConfig asyncConfig
+    -BaseConstantCache baseConstantCache
+    -ProcessManager processManager
+    -getDistance(p1: Point2D, p2: Point2D): double
+    +assignReadyTransfers(siteCd: String): void
+    -assignTransferToRobot(transfer: TransferControl): void
+    -getAvailableRobotsInSameMap(robotlst: List<RobotMaster>, mapUuid: Long, siteCd: String): Map<String, NodeMaster>
+    -filterRobotsInNodeMap(robotlst: List<RobotMaster>, validNodeIds: Set<String>): List<RobotMaster>
+    -selectAndReserveRobot(candidates: List<RobotMaster>, nodeMap: Map<String, NodeMaster>, source: Point2D): RobotMaster
+    -parsePoint(x: String, y: String): Double
+    -transerSetQueue(eventInfo: EventInfo, transfer: TransferControl): void
 }
-interface TransferService {
-    +pathFinding(int): void
+class WriterService {
+    -Publisher publisher
+    +sendToUIPositionChange(eventInfo: EventInfo, returnCode: String, position: Position): void
+    +sendToJsonMiddleware(txId: String, task: String, topic: String, taskId: String, robotId: String, destination: String): void
+    +sendToMiddlewareHeartbeat(reqMsg: JSONObject, robotId: String): void
+    +sendTopic(eventInfo: EventInfo, topic: String, message: String): void
+    -makeHeader(eventInfo: EventInfo): JSONObject
+    +sendToUIHeartbeat(reqMsg: JSONObject): void
+    +sendToUIResponse(eventInfo: EventInfo, returnCode: String): void
 }
-interface AlgorithmService {
-    +aStarSearch(int, int, int, int, boolean[][]): List<Node>
 }
-interface TransferService {
-    +pathFinding(int): void
+package "UI" {
+class UiMessageHandler {
+    -Logger logger
+    -BaseExecutorHandler executor
+    -WriterService writerService
+    +handle(topic: String, msg: Message<?>): void
+    +processUIHeartbeatMessage(message: Message<?>): void
+    -processUIMessages(message: Message<?>): void
 }
-AlgorithmServiceImpl ..|> AlgorithmService : implements
-AlgorithmServiceImpl ..> Node : uses
-AlgorithmServiceImpl ..> Node : uses
-AlgorithmServiceImpl ..> Node : uses
-TransferServiceImpl ..|> TransferService : implements
-TransferServiceImpl --> AgentPathVisualizer : has
-TransferServiceImpl --> AlgorithmService : has
+class CreateTransferControl {
+    -Logger logger
+    +doWork(message: JSONObject): String
+}
+}
 @enduml

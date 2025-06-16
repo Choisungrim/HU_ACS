@@ -1,6 +1,5 @@
 package com.hubis.acs.common.handler.impl;
 
-import com.hubis.acs.common.adapter.mqtt.Publisher;
 import com.hubis.acs.common.constants.BaseConstants;
 import com.hubis.acs.common.entity.vo.EventInfo;
 import com.hubis.acs.common.handler.GlobalWorkHandlerIF;
@@ -14,9 +13,9 @@ import com.hubis.acs.service.BaseService;
 import com.hubis.acs.service.WriterService;
 import org.json.JSONObject;
 import org.springframework.context.ApplicationContext;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
-@Component
+@Service("GlobalWorkHandler")
 public class GlobalWorkHandler implements GlobalWorkHandlerIF {
 
     protected ApplicationContext appContext;

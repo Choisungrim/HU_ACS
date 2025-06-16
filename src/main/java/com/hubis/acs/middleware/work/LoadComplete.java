@@ -51,7 +51,7 @@ public class LoadComplete extends GlobalWorkHandler {
                 break;
             default:
                 logger.error("Unknown robotType={} for robot={}", robotType, robotId);
-                return BaseConstants.RETURNCODE.Fail;
+                break;
         }
 
         if (isValid) {

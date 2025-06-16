@@ -8,11 +8,11 @@ import lombok.ToString;
 import java.util.Objects;
 
 @Entity
-@Table(name = "acs_zone_master_hist")
+@Table(name = "acs_zone_hist")
 @Getter
 @Setter
 @ToString
-public class ZoneMasterHist extends BaseEntity {
+public class ZoneHist extends BaseEntity {
 
     @Id
     private Long hist_id; // 일련 번호
@@ -32,10 +32,10 @@ public class ZoneMasterHist extends BaseEntity {
 
     private String site_cd; // 사이트 식별 코드
 
-    public ZoneMasterHist() {
+    public ZoneHist() {
     }
 
-    public ZoneMasterHist(Long hist_id) {
+    public ZoneHist(Long hist_id) {
         this.hist_id = hist_id;
     }
 
@@ -43,7 +43,7 @@ public class ZoneMasterHist extends BaseEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ZoneMasterHist that = (ZoneMasterHist) o;
+        ZoneHist that = (ZoneHist) o;
         return Objects.equals(hist_id, that.hist_id);
     }
 

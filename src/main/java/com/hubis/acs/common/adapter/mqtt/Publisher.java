@@ -10,7 +10,7 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
-@Component
+@Component("Publisher")
 public class Publisher {
 
     private final MessageHandler mqttHandler;

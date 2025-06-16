@@ -19,8 +19,7 @@ public class LoadStart extends GlobalWorkHandler {
         String robotId = eventInfo.getUserId();
         String siteId = eventInfo.getSiteId();
 
-        RobotMaster robotKey = new RobotMaster(robotId, siteId);
-        RobotMaster robot = baseService.findByEntity(RobotMaster.class, robotKey);
+        RobotMaster robot = baseService.findByEntity(RobotMaster.class, new RobotMaster(robotId, siteId));
 
         if(CommonUtils.isNullOrEmpty(robot)) {
             logger.warn("robot not found");

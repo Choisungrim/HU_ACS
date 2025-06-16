@@ -4,6 +4,8 @@ import com.hubis.acs.common.configuration.customAnnotation.EnableAllprotocols;
 import com.hubis.acs.common.configuration.protocol.ProtocolConfig;
 import com.hubis.acs.service.AlgorithmService;
 import com.hubis.acs.service.TransferService;
+import com.umlgenerator.config.UMLGeneratorConfig;
+import com.umlgenerator.generator.UMLGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -55,10 +57,8 @@ public class DemoApplication implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
-//		 UMLGenerator.generateProjectUML(context,
-//		 		"com.hubis.acs",  // 프로젝트의 base package
-//		 		"C:\\HUBIS\\ROBOTICS\\HU_ACS\\acs\\src\\main\\resources\\uml-diagram.puml"  // 출력 파일 경로
-//		 );
+
+//		generatorUML(context,"com.hubis.acs","C:\\HUBIS\\ROBOTICS\\HU_ACS\\acs\\src\\main\\resources\\uml-diagram.puml");
 
 //		Scanner scanner = new Scanner(System.in);
 //		while (true) {
@@ -81,6 +81,31 @@ public class DemoApplication implements CommandLineRunner {
 //			}
 //		}
 //		scanner.close();
+	}
+
+	private void generatorUML(ApplicationContext context, String packages, String output)
+	{
+		System.out.println("Generating UML using " + packages);
+		UMLGeneratorConfig config = new UMLGeneratorConfig();
+		config.drawHasRelation = true;
+		config.drawUsesRelation = false;
+		config.drawReturnsRelation = false;
+		config.showMethods = true;
+
+		UMLGenerator.generateProjectUML(
+				context,
+				packages,
+				output,
+				config
+		);
+
+		System.out.println("Generated UML complete " + output);
+
+
+		//		 UMLGenerator.generateProjectUML(context,
+//		 		"com.hubis.acs",  // 프로젝트의 base package
+//		 		"C:\\HUBIS\\ROBOTICS\\HU_ACS\\acs\\src\\main\\resources\\uml-diagram.puml"  // 출력 파일 경로
+//		 );
 	}
 
 }

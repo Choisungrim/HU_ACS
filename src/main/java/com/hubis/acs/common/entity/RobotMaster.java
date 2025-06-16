@@ -22,15 +22,18 @@ public class RobotMaster extends BaseEntity {
     private String model_nm; // 모델명
 
     private String status_tx; // 상태
-    
+
     private String transfer_id; // 작업 ID
 
     private String location_nm; // 로봇의 현재 위치 정보
 
     private String wait_location_nm; // 로봇의 고정 대기위치 | 빈 경우 동적 대기
 
+    @Column(name = "detection_fl", columnDefinition = "TINYINT(1)")
+    private Integer detection_fl; // 로봇의 충전 위치 정보
+
     private double battery_no; // 로봇의 배터리 정보
-    
+
     private String charge_rule_id; // 충전 규칙정보
 
     private Long map_uuid; // 맵 고유 ID
