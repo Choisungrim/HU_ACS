@@ -57,7 +57,7 @@ public class MiddlewareMessageHandler {
         try {
             JSONObject reqMsg = JsonUtils.validationMessageToJsonObject(message);
 
-            HashMap<String, Object> vehicleInfo = mqttCache.getMqttVehicle(robotId);
+            ConcurrentHashMap<String, Object> vehicleInfo = mqttCache.getMqttVehicle(robotId);
 
             String tid = reqMsg.optString("tid");
             String sentTid = (String) vehicleInfo.getOrDefault("heartbeat_tid", tid);

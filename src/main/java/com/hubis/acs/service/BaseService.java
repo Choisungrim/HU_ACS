@@ -18,5 +18,8 @@ public interface BaseService {
 
     <T> boolean saveOrUpdate(EventInfo eventInfo, T entity);
 
+
+    <T> boolean update(EventInfo eventInfo, T entity);
+
     <T> boolean delete(Class<T> clazz, Object id);
 }

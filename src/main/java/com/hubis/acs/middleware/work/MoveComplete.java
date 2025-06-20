@@ -45,7 +45,7 @@ public class MoveComplete extends GlobalWorkHandler {
         Position destPos = new Position(ConvertUtils.toDouble(destNode.getPos_x_val()), ConvertUtils.toDouble(destNode.getPos_y_val()));
 
         //로봇의 현재 position과 source, dest Node 비교 후 Loading, Unloading 상태변경
-        // EPT +- 20 mm , OMRON +-
+        // EPT +- 25 mm , OMRON +-
 
         // 허용 오차 (mm)
         final double POSITION_TOLERANCE = 20.0;
@@ -53,7 +53,7 @@ public class MoveComplete extends GlobalWorkHandler {
         boolean isAtSource = isWithinTolerance(robotPos.getX(), robotPos.getY(), sourcePos.getX(), sourcePos.getY(), POSITION_TOLERANCE);
         boolean isAtDest = isWithinTolerance(robotPos.getX(), robotPos.getY(), destPos.getX(), destPos.getY(), POSITION_TOLERANCE);
 
-
+        //TODO : load time / unload time 별 구분 후 목적지 위치 검증으로 수정
         if (!(isAtSource || isAtDest)) {
             logger.error("MoveComplete 검증 실패: Robot {} 위치 mismatch! 현재 pos=({}, {}), source=({}, {}), dest=({}, {})",
                     robotId, robotPos.getX(), robotPos.getY(), sourcePos.getX(), sourcePos.getY(), destPos.getX(), destPos.getY());
@@ -66,6 +66,7 @@ public class MoveComplete extends GlobalWorkHandler {
         double deltaX = robotX - targetX;
         double deltaY = robotY - targetY;
         double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        System.out.println(distance);
         return distance <= tolerance;
     }
 }

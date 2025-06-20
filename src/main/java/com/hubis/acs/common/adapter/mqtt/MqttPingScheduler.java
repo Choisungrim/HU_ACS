@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 @RequiredArgsConstructor
@@ -33,7 +34,7 @@ public class MqttPingScheduler {
         for(RobotMaster robot : robotList) {
             String robotId = robot.getRobot_id();
             String siteId = robot.getSite_cd();
-            HashMap<String,Object> vehicleInfo = mqttCache.getMqttVehicle(robotId);
+            ConcurrentHashMap<String,Object> vehicleInfo = mqttCache.getMqttVehicle(robotId);
             String tid = TimeUtils.getCurrentTimekey();
 
             int count = (int) vehicleInfo.getOrDefault("connectionCount", 10);

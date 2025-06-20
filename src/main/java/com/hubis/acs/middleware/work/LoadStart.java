@@ -2,8 +2,10 @@ package com.hubis.acs.middleware.work;
 
 import com.hubis.acs.common.constants.BaseConstants;
 import com.hubis.acs.common.entity.RobotMaster;
+import com.hubis.acs.common.entity.TransferControl;
 import com.hubis.acs.common.handler.impl.GlobalWorkHandler;
 import com.hubis.acs.common.utils.CommonUtils;
+import com.hubis.acs.common.utils.TimeUtils;
 import com.hubis.acs.ui.work.CreateTransferControl;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -20,6 +22,7 @@ public class LoadStart extends GlobalWorkHandler {
         String siteId = eventInfo.getSiteId();
 
         RobotMaster robot = baseService.findByEntity(RobotMaster.class, new RobotMaster(robotId, siteId));
+        TransferControl transfer = baseService.findByEntity(TransferControl.class, new TransferControl(robot.getTransfer_id(), siteId));
 
         if(CommonUtils.isNullOrEmpty(robot)) {
             logger.warn("robot not found");
@@ -31,7 +34,12 @@ public class LoadStart extends GlobalWorkHandler {
 
         //상태 업데이트
         robot.setStatus_tx(BaseConstants.ROBOT.STATE.LOADING);
-        baseService.saveOrUpdate(eventInfo,robot);
+        boolean update = baseService.update(eventInfo,robot);
+
+        transfer.setLoad_start_at(TimeUtils.getLocalDateCurrentTime());
+        baseService.update(eventInfo,transfer);
+
+        System.out.println("▶ RobotMaster loadStatus update result = " + update);
         return result;
     }
 }

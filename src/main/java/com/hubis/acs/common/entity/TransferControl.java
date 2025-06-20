@@ -22,10 +22,10 @@ public class TransferControl extends BaseEntity {
     private int priority_no; // 작업 우선 순위
     private String source_port_id; // 작업 대상 포트 명칭
     private String destination_port_id; // 최종 목적지 예치 포트 명칭
-    private java.time.LocalDateTime acquire_start_at; // 물품 수령 시작 시간
-    private java.time.LocalDateTime acquire_end_at; // 물품 수령 완료 시간
-    private java.time.LocalDateTime deposit_start_at; // 물품 예치 시작 시간
-    private java.time.LocalDateTime deposit_end_at; // 물품 예치 완료 시간
+    private java.time.LocalDateTime load_start_at; // 물품 수령 시작 시간
+    private java.time.LocalDateTime load_end_at; // 물품 수령 완료 시간
+    private java.time.LocalDateTime unload_start_at; // 물품 예치 시작 시간
+    private java.time.LocalDateTime unload_end_at; // 물품 예치 완료 시간
 
     @Id
     private String site_cd; // SITE 정보

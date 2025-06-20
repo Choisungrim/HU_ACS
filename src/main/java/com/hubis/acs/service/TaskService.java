@@ -92,7 +92,6 @@ public class TaskService {
             availableRobots = robotMasterRepository.findAvailableRobotById(transfer.getAssigned_robot_id(),transfer.getSite_cd());
 
         if (availableRobots.isEmpty()) {
-            log.warn("[WARN] 유효한 로봇 후보 없음");
             transerSetQueue(eventInfo,transfer);
             return;
         }
@@ -102,7 +101,7 @@ public class TaskService {
         List<RobotMaster> candidateRobots = filterRobotsInNodeMap(availableRobots, nodeMap.keySet());
 
         if (candidateRobots.isEmpty()) {
-            log.warn("[WARN] 유효한 로봇 후보 없음");
+            log.warn("[WARN] 유효한 맵에 속한 로봇 후보 없음");
             transerSetQueue(eventInfo,transfer);
             return;
         }
@@ -187,7 +186,9 @@ public class TaskService {
     }
 
     private void transerSetQueue(EventInfo eventInfo, TransferControl transfer) {
-        transfer.setTransfer_st(BaseConstants.Transfer.State.QUEUED);
-        baseService.saveOrUpdate(eventInfo,transfer);
+        if(transfer.getTransfer_st()!=BaseConstants.Transfer.State.QUEUED) {
+            transfer.setTransfer_st(BaseConstants.Transfer.State.QUEUED);
+            baseService.saveOrUpdate(eventInfo,transfer);
+        }
     }
 }

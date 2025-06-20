@@ -11,8 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-
 @Component("middleware_sensor_change")
 public class SensorChange extends GlobalWorkHandler {
     private static final Logger logger = LoggerFactory.getLogger(SensorChange.class);
@@ -24,6 +22,7 @@ public class SensorChange extends GlobalWorkHandler {
     public String doWork(JSONObject message) throws Exception {
         String robotId = eventInfo.getUserId();
         String siteId = eventInfo.getSiteId();
+        int allDetected = 1;
 
         RobotMaster robot = baseService.findByEntity(RobotMaster.class, new RobotMaster(robotId,siteId));
         if (CommonUtils.isNullOrEmpty(robot)) {
@@ -34,10 +33,23 @@ public class SensorChange extends GlobalWorkHandler {
         for (String field : message.keySet()) {
             Object value = message.opt(field);
 
-            mqttCache.addMqttVehicle(robotId, field, value);
-            logger.debug("Updated SensorCache robotId={} field={} value={}", robotId, field, value);
+            // 특정 센서 필드에 대해서만 체크하고 싶은 경우 조건 추가
+            if (field.startsWith("cargo_")) {
+                if (!"1".equalsIgnoreCase(String.valueOf(value))) {
+                    allDetected = 0;
+                }
+            }
+        }
+        System.out.println("allDetected = " + allDetected);
+        System.out.println("robotDetection = " + robot.getDetection_fl());
+        if (robot.getDetection_fl() != allDetected) {
+
+            robot.setDetection_fl(allDetected);
+            boolean update = baseService.update(eventInfo, robot);
+            System.out.println("▶ RobotMaster Sensor Change update result = " + update);
         }
 
+        logger.debug("Updated RobotMaster.detectionFl = {}", allDetected);
 
         return result;
     }

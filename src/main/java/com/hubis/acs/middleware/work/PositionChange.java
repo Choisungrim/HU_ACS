@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Component("middleware_position_change")
@@ -34,75 +35,52 @@ public class PositionChange extends GlobalWorkHandler {
         double y = message.getDouble("y");
         double deg = message.getDouble("deg");
 
-        Position newPos = new Position(x, y, deg);
+        if (Double.isNaN(x) || Double.isNaN(y)) {
+            logger.warn("[{}] Invalid position data: x={}, y={}", robotId, x, y);
+            return BaseConstants.RETURNCODE.Fail;
+        }
 
-        //map 가져오기
+        Position newPos = new Position(x, y, deg);
         RobotMasterId masterId = new RobotMasterId(robotId,eventInfo.getSiteId());
         RobotMaster robot = baseService.findById(RobotMaster.class, masterId);
 
         if(robot == null) { logger.warn("robot not found");  return BaseConstants.RETURNCODE.Fail;}
 
-        String modelNm = robot.getModel_nm();
         long mapuuid = robot.getMap_uuid();
-
-        // Local → Global 변환 적용
-        Point globalPoint = mapTransformManager.toGlobal(modelNm, PositionUtils.toPoint(newPos));
-        Position globalLatestPosition = PositionUtils.toPosition(globalPoint, newPos.getTheta());
-
         // 이전 위치 가져오기
         Position prevGlobalPos = robotPositionCache.get(robotId);
-        robotPositionCache.put(robotId, globalLatestPosition);
+
+        // Local → Global 변환 적용
+        Point globalPoint = mapTransformManager.toGlobal(robot.getModel_nm(), PositionUtils.toPoint(newPos));
+        Position globalPos = PositionUtils.toPosition(globalPoint, newPos.getTheta());
+        robotPositionCache.put(robotId, globalPos);
 
         // 목적지 기반 경로 블록 확인
+        List<Position> path = generateSurroundingPath(globalPos, 100.0, 10.0);
+
         String destId = processManager.getCurrentDestination(robotId);
-        NodeMasterId nodeId = new NodeMasterId(destId,mapuuid,eventInfo.getSiteId());
-
-//        시스템 로그 용
-//        for (GlobalZone z : globalZoneManager.getZonesByMap(mapuuid)) {
-//            System.out.println("Zone loaded: " + z.getZoneId() + ", x: [" + z.getMinX() + "," + z.getMaxX() + "], y: [" + z.getMinY() + "," + z.getMaxY() + "]");
-//        }
-
         if (destId != null) {
-            NodeMaster destPos = baseService.findById(NodeMaster.class, nodeId); // 또는 GoalMaster 등으로부터 Position을 추출
-            List<Position> path = generateSurroundingPath(globalLatestPosition, 200.0, 1.0);
-
-            //점유 여부 검사
-            if (pathValidator.isPathBlocked(eventInfo.getSiteId(), mapuuid, path, robotId)) {
-                logger.warn("Blocked path detected for robot {} from {} to {}", robotId, globalLatestPosition, destPos);
-                // 대기 또는 회피 트리거 삽입 가능
-                return result;
-            }
-
-            //점유 수행
-            for (GlobalZone zone : globalZoneManager.getZonesByMap(mapuuid)) {
-
-                boolean firstPosition = (prevGlobalPos == null);
-                boolean wasInZone = !firstPosition && zone.contains(prevGlobalPos);
-                boolean isInZone = zone.contains(globalLatestPosition);
-
-                if (firstPosition && isInZone) {
-                    boolean locked = zoneLockManager.lock(eventInfo.getSiteId(), zone.getZoneId(), robotId);
-                    logger.info("[{}] FIRST POSITION - entered zone [{}], locked = {}", robotId, zone.getZoneId(), locked);
-                } else if (!wasInZone && isInZone) {
-                    boolean locked = zoneLockManager.lock(eventInfo.getSiteId(), zone.getZoneId(), robotId);
-                    logger.info("[{}] entered zone [{}], locked = {}", robotId, zone.getZoneId(), locked);
-                } else if (wasInZone && !isInZone) {
-                    zoneLockManager.release(eventInfo.getSiteId(), zone.getZoneId(), robotId);
-                    logger.info("[{}] exited zone [{}]", robotId, zone.getZoneId());
-                }
-                else {
-                    logger.debug("[{}] This zone has not been locked", robotId);
-                }
-            }
-
-            // optional: blocked 영역 진입 여부
-            boolean isBlocked = globalZoneManager.isPositionBlocked(globalLatestPosition, mapuuid);
-            logger.debug("[{}] at ({},{}) isBlocked: {}", robotId, x, y, isBlocked);
+            NodeMasterId nodeId = new NodeMasterId(destId,mapuuid,eventInfo.getSiteId());
+            NodeMaster destPos = baseService.findById(NodeMaster.class, nodeId);
+            logger.debug("[{}] Checking path to dest: {} → {}", robotId, globalPos, destPos);
+            //목적지가 있는경우
         }
-        else logger.warn("[{}] at ({},{}) is destination is null", robotId, x, y);
+        else
+        {
+            //목적지가 없는경우
+            logger.warn("[{}] at ({},{}) is destination is null", robotId, x, y);
+        }
 
+        // 경로 상 블록 여부 확인
+        if (pathValidator.isPathBlocked(eventInfo.getSiteId(), mapuuid, path, robotId)) {
+            logger.warn("[{}] Path is blocked at pos {}", robotId, globalPos);
+            // 추후: 정지 명령 또는 회피로직 삽입
+        }
+        
+        // zone 점유
+        updateZoneOccupancy(mapuuid, prevGlobalPos, globalPos, robotId);
 
-        writerService.sendToUIPositionChange(eventInfo, BaseConstants.RETURNCODE.Success, globalLatestPosition);
+        writerService.sendToUIPositionChange(eventInfo, BaseConstants.RETURNCODE.Success, globalPos);
 
         return result;
     }
@@ -122,6 +100,27 @@ public class PositionChange extends GlobalWorkHandler {
         return path;
     }
 
+    private void updateZoneOccupancy(long mapuuid, Position prevPos, Position currPos, String robotId) {
+        boolean isFirst = (prevPos == null);
+        var zones = globalZoneManager.getZonesByMap(mapuuid);
 
+        for (GlobalZone zone : zones) {
+            boolean wasIn = !isFirst && zone.contains(prevPos);
+            boolean isIn = zone.contains(currPos);
+
+            if (isFirst && isIn) {
+                if (zoneLockManager.lock(eventInfo.getSiteId(), zone.getZoneId(), robotId)) {
+                    logger.info("[{}] FIRST entry into zone [{}]", robotId, zone.getZoneId());
+                }
+            } else if (!wasIn && isIn) {
+                if (zoneLockManager.lock(eventInfo.getSiteId(), zone.getZoneId(), robotId)) {
+                    logger.info("[{}] Entered zone [{}]", robotId, zone.getZoneId());
+                }
+            } else if (wasIn && !isIn) {
+                zoneLockManager.release(eventInfo.getSiteId(), zone.getZoneId(), robotId);
+                logger.info("[{}] Exited zone [{}]", robotId, zone.getZoneId());
+            }
+        }
+    }
 }
 

@@ -28,7 +28,7 @@ public class ZoneConverter {
             double minY = points.stream().mapToDouble(Point::getY).min().orElse(0);
             double maxY = points.stream().mapToDouble(Point::getY).max().orElse(0);
 
-            GlobalZone zone = new GlobalZone(entity.getZone_id(), minX, maxX, minY, maxY);
+            GlobalZone zone = new GlobalZone(entity.getZone_id(), minX, maxX, minY, maxY, points);
             return zone;
 
         } catch (Exception e) {

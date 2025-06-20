@@ -3,6 +3,7 @@ package com.hubis.acs.process;
 
 import com.hubis.acs.common.cache.MqttCache;
 import com.hubis.acs.common.constants.BaseConstants;
+import com.hubis.acs.common.entity.TransferControl;
 import com.hubis.acs.common.entity.vo.EventInfo;
 import com.hubis.acs.common.handler.BaseExecutorHandler;
 import com.hubis.acs.common.utils.TimeUtils;
@@ -47,17 +48,17 @@ public class ProcessManager {
         ProcessFlowContext context = new ProcessFlowContext(processId, robotId, mqttCache, writerService);
         processMap.put(processId, context);
 
-        executor.execute(() -> runProcess(context, source, dest));
+        executor.execute(() -> runProcess(context, source, dest, siteId));
     }
 
-    private void runProcess(ProcessFlowContext ctx, String source, String dest) {
+    private void runProcess(ProcessFlowContext ctx, String source, String dest, String siteId) {
         try {
             executeWithRetry(() -> moveTask(ctx, TimeUtils.getCurrentTimekey(), source), BaseConstants.ROBOT.Task.MOVE, ctx);
             executeWithRetry(() -> loadTask(ctx, TimeUtils.getCurrentTimekey(), source), BaseConstants.ROBOT.Task.LOAD, ctx);
             executeWithRetry(() -> moveTask(ctx, TimeUtils.getCurrentTimekey(), dest), BaseConstants.ROBOT.Task.MOVE, ctx);
             executeWithRetry(() -> unLoadTask(ctx, TimeUtils.getCurrentTimekey(), dest), BaseConstants.ROBOT.Task.UNLOAD, ctx);
 
-            jobCompleted(ctx, TimeUtils.getCurrentTimekey(), source, dest);
+            jobCompleted(ctx, siteId);
 
             logger.info("Process {} completed for robot {}", ctx.getProcessId(), ctx.getRobotId());
         } catch (Exception e) {
@@ -115,10 +116,12 @@ public class ProcessManager {
         }
     }
 
-    public void jobCompleted(ProcessFlowContext ctx, String txId, String source, String dest) {
+    public void jobCompleted(ProcessFlowContext ctx, String siteId) {
         try {
             // Job completion logic placeholder
             String processId = ctx.getProcessId();
+            TransferControl transfer = new TransferControl(processId,siteId);
+
 
         } catch (Exception e) { logger.error("Error in process JOB {}: {}", ctx.getProcessId(), e.getMessage(), e); }
     }
@@ -128,16 +131,20 @@ public class ProcessManager {
     }
 
     public void notifyState(String transactionId, String status) {
-        executeHandler(eventInfoMap.get(transactionId), reqMsgMap.get(transactionId));
-        processMap.values().forEach(ctx -> ctx.tryNotifyState(transactionId, status));
+        if(executeHandler(eventInfoMap.get(transactionId), reqMsgMap.get(transactionId)).equals(BaseConstants.RETURNCODE.Success))
+        {
+            processMap.values().forEach(ctx -> ctx.tryNotifyState(transactionId, status));
 
-        eventInfoMap.remove(transactionId); // 사용 후 정리
-        reqMsgMap.remove(transactionId);
+            eventInfoMap.remove(transactionId); // 사용 후 정리
+            reqMsgMap.remove(transactionId);
+        }
+        else
+            logger.info("Notify state for transactionId={} status={} not Success", transactionId, status);
     }
 
-    private void executeHandler(EventInfo eventInfo, JSONObject reqMsg)
+    private String executeHandler(EventInfo eventInfo, JSONObject reqMsg)
     {
-        executor.execute(eventInfo, reqMsg, new JSONObject());
+        return executor.execute(eventInfo, reqMsg, new JSONObject());
     }
 
     public void addEvent(EventInfo eventInfo, JSONObject reqMsg) {

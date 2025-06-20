@@ -62,6 +62,10 @@ public class BaseConstants {
 
     public static class ROBOT
     {
+        public static class MODEL
+        {
+
+        }
         public static class Task
         {
             public final static String MOVE = "move";
@@ -78,12 +82,35 @@ public class BaseConstants {
 
             }
         }
+        public static class TYPE
+        {
+            public static class STATE {
+                public final static String STOPPED = "stopped";
+                public final static String RUNNING = "running";
+            }
+            public static class KEY {
+                public final static String LIFT_STATUS = "lift_status";
+                public final static String LIFT_POSITION = "lift_position";
+                public final static String CONVEYOR_STATUS = "conveyor_status";
+                public final static String CONVEYOR_POSITION = "conveyor_position";
+                public final static String TOWING_STATUS = "towing_status";
+                public final static String TOWING_POSITION = "towing_position";
+            }
+            public final static String LIFT = "lift";
+            public final static String CONVEYOR = "conveyor";
+            public final static String TOWING = "towing";
+        }
 
         public static class STATE
         {
-            public final static String RUNNING = "running";
+            public final static String IDLE = "idle";
+            public final static String MOVING = "moving";
             public final static String LOADING = "loading";
             public final static String UNLOADING = "unloading";
+            public final static String WAITING = "waiting";
+            public final static String BLOCKING = "blocking";
+            public final static String CHARGING = "charging";
+
 
         }
     }

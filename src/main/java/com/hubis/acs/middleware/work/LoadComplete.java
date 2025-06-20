@@ -6,6 +6,7 @@ import com.hubis.acs.common.entity.RobotMaster;
 import com.hubis.acs.common.entity.TransferControl;
 import com.hubis.acs.common.handler.impl.GlobalWorkHandler;
 import com.hubis.acs.common.utils.CommonUtils;
+import com.hubis.acs.common.utils.TimeUtils;
 import com.hubis.acs.ui.work.CreateTransferControl;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -19,6 +20,8 @@ import java.util.Map;
 public class LoadComplete extends GlobalWorkHandler {
     private static final Logger logger = LoggerFactory.getLogger(LoadComplete.class);
 
+    private final String STOPPED = BaseConstants.ROBOT.TYPE.STATE.STOPPED;
+
     @Autowired
     private MqttCache mqttCache;
 
@@ -31,7 +34,7 @@ public class LoadComplete extends GlobalWorkHandler {
         RobotMaster robot = baseService.findByEntity(RobotMaster.class, new RobotMaster(robotId, siteId));
         TransferControl transfer = baseService.findByEntity(TransferControl.class, new TransferControl(robot.getTransfer_id(), siteId));
 
-        if (CommonUtils.isNullOrEmpty(robot) || CommonUtils.isNullOrEmpty(transfer)) {
+        if (isStateValidate(robot) || isStateValidate(transfer)) {
             logger.warn("robot or transfer not found");
             return BaseConstants.RETURNCODE.Fail;
         }
@@ -40,60 +43,59 @@ public class LoadComplete extends GlobalWorkHandler {
         String robotType = robot.getRobot_tp().toLowerCase();
 
         switch (robotType) {
-            case "lift":
-                isValid = checkLift(robotId);
+            case BaseConstants.ROBOT.TYPE.LIFT:
+                isValid = checkLift(robot);
                 break;
-            case "conveyor":
-                isValid = checkConveyor(robotId);
+            case BaseConstants.ROBOT.TYPE.CONVEYOR:
+                isValid = checkConveyor(robot);
                 break;
-            case "towing":
-                isValid = checkTowing(robotId);
+            case BaseConstants.ROBOT.TYPE.TOWING:
+                isValid = checkTowing(robot);
                 break;
             default:
                 logger.error("Unknown robotType={} for robot={}", robotType, robotId);
                 break;
         }
 
-        if (isValid) {
-            logger.info("LoadComplete 검증 성공: robotType={} robotId={}", robotType, robotId);
-            return result;
-        } else {
+        if (!isValid) {
             logger.error("LoadComplete 검증 실패: robotType={} robotId={}", robotType, robotId);
             return BaseConstants.RETURNCODE.Fail;
         }
+
+        logger.info("LoadComplete 검증 성공: robotType={} robotId={}", robotType, robotId);
+        transfer.setLoad_end_at(TimeUtils.getLocalDateCurrentTime());
+        baseService.saveOrUpdate(eventInfo,transfer);
+        return result;
     }
 
-    private boolean checkLift(String robotId) {
-        String liftStatus = (String) mqttCache.getMqttVehicleByKey(robotId,"lift_status");
-        String sensor1 = (String) mqttCache.getMqttVehicleByKey(robotId,"sensor_1");
+    private boolean checkLift(RobotMaster robot) {
+        String liftStatus = (String) mqttCache.getMqttVehicleByKey(robot.getRobot_id(), BaseConstants.ROBOT.TYPE.KEY.LIFT_STATUS);
+        int sensorStatus = robot.getDetection_fl();
 
-        if(isStateValidate(liftStatus)||isStateValidate(sensor1)) return false;
-        return "complete".equalsIgnoreCase(liftStatus) && "detected".equalsIgnoreCase(sensor1);
+        if(isStateValidate(liftStatus)||isStateValidate(sensorStatus)) return false;
+        return (STOPPED.equalsIgnoreCase(liftStatus)
+                && sensorStatus == 1);
     }
 
-    private boolean checkConveyor(String robotId) {
-        String conveyorStatus = (String) mqttCache.getMqttVehicleByKey(robotId, "conveyor_status");
-        String sensor1 = (String) mqttCache.getMqttVehicleByKey(robotId, "sensor_1");
-        String sensor2 = (String) mqttCache.getMqttVehicleByKey(robotId, "sensor_2");
+    private boolean checkConveyor(RobotMaster robot) {
+        String conveyorStatus = (String) mqttCache.getMqttVehicleByKey(robot.getRobot_id(), BaseConstants.ROBOT.TYPE.KEY.CONVEYOR_STATUS);
+        int sensorStatus = robot.getDetection_fl();
 
-        if(isStateValidate(conveyorStatus)||isStateValidate(sensor1)||isStateValidate(sensor2)) return false;
-        return ("stopped".equalsIgnoreCase(conveyorStatus) || "ready".equalsIgnoreCase(conveyorStatus))
-                && "detected".equalsIgnoreCase(sensor1)
-                && "detected".equalsIgnoreCase(sensor2);
+        if(isStateValidate(conveyorStatus)||isStateValidate(sensorStatus)) return false;
+        return (STOPPED.equalsIgnoreCase(conveyorStatus)
+                && sensorStatus == 1);
     }
 
-    private boolean checkTowing(String robotId) {
-        String towingStatus = (String) mqttCache.getMqttVehicleByKey(robotId, "towing_status");
-        String sensor1 = (String) mqttCache.getMqttVehicleByKey(robotId, "sensor_1");
-        String sensor2 = (String) mqttCache.getMqttVehicleByKey(robotId, "sensor_2");
+    private boolean checkTowing(RobotMaster robot) {
+        String towingStatus = (String) mqttCache.getMqttVehicleByKey(robot.getRobot_id(), BaseConstants.ROBOT.TYPE.KEY.TOWING_STATUS);
+        int sensorStatus = robot.getDetection_fl();
 
-        if(isStateValidate(towingStatus)||isStateValidate(sensor1)||isStateValidate(sensor2)) return false;
-        return "complete".equalsIgnoreCase(towingStatus)
-                && "detected".equalsIgnoreCase(sensor1)
-                && "detected".equalsIgnoreCase(sensor2);
+        if(isStateValidate(towingStatus)||isStateValidate(sensorStatus)) return false;
+        return (STOPPED.equalsIgnoreCase(towingStatus)
+                && sensorStatus == 1);
     }
 
-    private boolean isStateValidate(String target) {
+    private boolean isStateValidate(Object target) {
         return CommonUtils.isNullOrEmpty(target);
     }
 }

@@ -23,21 +23,15 @@ public class PathValidator {
         Collection<GlobalZone> zones = zoneManager.getZonesByMap(mapuuid);
 
         for (Position pos : path) {
-            System.out.println("Checking pos: " + pos);
             for (GlobalZone zone : zones) {
-                boolean inZone = zone.contains(pos);
-                System.out.println("Zone " + zone.getZoneId() + " contains pos " + pos + " ? " + inZone);
-                if(inZone) {
+                if (zone.contains(pos)) {
                     String lockOwner = lockManager.getLockOwner(siteId, zone.getZoneId());
-                    if (inZone && lockOwner != null && !lockOwner.equals(robotId)) {
-                        System.out.println("Blocked by zone: " + zone.getZoneId() + ", owner: " + lockOwner + ", current robot: " + robotId);
+                    if (lockOwner != null && !lockOwner.equals(robotId)) {
                         return true;
-
                     }
                 }
             }
         }
         return false;
     }
-
 }

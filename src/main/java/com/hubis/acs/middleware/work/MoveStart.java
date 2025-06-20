@@ -32,7 +32,7 @@ public class MoveStart extends GlobalWorkHandler {
             logger.warn("robot Assigned Transfer not found");
         
         //상태 업데이트
-        robot.setStatus_tx(BaseConstants.ROBOT.STATE.RUNNING);
+        robot.setStatus_tx(BaseConstants.ROBOT.STATE.MOVING);
         baseService.saveOrUpdate(eventInfo,robot);
 
         return result;

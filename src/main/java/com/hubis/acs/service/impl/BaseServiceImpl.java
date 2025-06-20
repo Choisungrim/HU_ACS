@@ -41,23 +41,27 @@ class BaseServiceImpl implements BaseService {
     @Override
     @Transactional
     public <T> boolean save(EventInfo eventInfo, T entity ) {
-        setCommonModule(eventInfo, entity, false);
-        return commonDAO.insert(entity);
+
+        Object primaryKey = extractPrimaryKey(entity);
+        boolean exists = findById(entity.getClass(), primaryKey) != null;
+
+        setCommonModule(eventInfo, entity, !exists);
+        return commonDAO.merge(entity);
     }
 
     @Override
     @Transactional
     public <T> boolean saveOrUpdate(EventInfo eventInfo, T entity ) {
-        Object primaryKey = extractPrimaryKey(entity);  // 유틸 메서드 필요
-        boolean exists = findById(entity.getClass(), primaryKey) != null;
+        setCommonModule(eventInfo, entity, false);
+        commonDAO.merge(entity);
+        return true;
+    }
 
-        setCommonModule(eventInfo, entity, !exists);
-
-        if (exists) {
-            return commonDAO.update(entity);
-        } else {
-            return commonDAO.insert(entity);
-        }
+    @Override
+    @Transactional
+    public <T> boolean update(EventInfo eventInfo, T entity) {
+        setCommonModule(eventInfo, entity, false); // isNew = false
+        return commonDAO.update(entity);
     }
 
     @Override
@@ -66,9 +70,6 @@ class BaseServiceImpl implements BaseService {
         return commonDAO.delete(clazz, id);
     }
 
-    private void saveByHist(){
-
-    }
     private void setCommonModule(EventInfo eventInfo, Object entity,  boolean isNew) {
         if (!(entity instanceof BaseEntity)) return;
 

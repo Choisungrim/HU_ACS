@@ -2,6 +2,7 @@ package com.hubis.acs.common.utils;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 public class TimeUtils {
@@ -22,6 +23,10 @@ public class TimeUtils {
 
     public static Date getCurrentTime() {
         return new Date();
+    }
+
+    public static LocalDateTime getLocalDateCurrentTime() {
+        return LocalDateTime.now();
     }
 
     public static Date getCurrentTimeByTimekey(String timekey) {

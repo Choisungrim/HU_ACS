@@ -68,6 +68,8 @@ public class RobotWorkerThread implements Runnable {
                         System.err.println("Unknown category: " + category);
                         break;
                 }
+
+                Thread.sleep(100);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;

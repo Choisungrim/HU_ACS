@@ -17,14 +17,25 @@ public class BaseWorkHandlerRegistry {
 
     @PostConstruct
     public void init() {
+        System.out.println("🛠 BaseWorkClassLoader Initialized");
 
-        System.out.println("BaseWorkClassLoader Initialized");
+        try {
+            Map<String, GlobalWorkHandlerIF> beans = context.getBeansOfType(GlobalWorkHandlerIF.class);
+            for (Map.Entry<String, GlobalWorkHandlerIF> entry : beans.entrySet()) {
+                String key = entry.getKey();
+                try {
+                    handlerMap.put(key, entry.getValue());
+                } catch (Exception handlerEx) {
+                    System.err.println("❌ Failed to register handler: " + key);
+                    handlerEx.printStackTrace();
+                }
+            }
+            System.out.println("🔧 Final Registered Handlers: " + handlerMap.keySet());
 
-        Map<String, GlobalWorkHandlerIF> beans = context.getBeansOfType(GlobalWorkHandlerIF.class);
-        for (Map.Entry<String, GlobalWorkHandlerIF> entry : beans.entrySet()) {
-            handlerMap.put(entry.getKey(), entry.getValue());
+        } catch (Exception e) {
+            System.err.println("❗ Handler Registry Init Failed");
+            e.printStackTrace();
         }
-        System.out.println("🔧 Registered Handlers: " + handlerMap.keySet());
     }
 
     public static GlobalWorkHandlerIF getHandler(String group, String workId) {
