@@ -6,6 +6,8 @@ import com.hubis.acs.common.constants.BaseConstants;
 import com.hubis.acs.common.entity.TransferControl;
 import com.hubis.acs.common.entity.vo.EventInfo;
 import com.hubis.acs.common.handler.BaseExecutorHandler;
+import com.hubis.acs.common.utils.EventInfoBuilder;
+import com.hubis.acs.common.utils.RuntimeUtils;
 import com.hubis.acs.common.utils.TimeUtils;
 import com.hubis.acs.service.BaseService;
 import com.hubis.acs.service.WriterService;
@@ -58,7 +60,7 @@ public class ProcessManager {
             executeWithRetry(() -> moveTask(ctx, TimeUtils.getCurrentTimekey(), dest), BaseConstants.ROBOT.Task.MOVE, ctx);
             executeWithRetry(() -> unLoadTask(ctx, TimeUtils.getCurrentTimekey(), dest), BaseConstants.ROBOT.Task.UNLOAD, ctx);
 
-            jobCompleted(ctx, siteId);
+            jobComplete(ctx, siteId);
 
             logger.info("Process {} completed for robot {}", ctx.getProcessId(), ctx.getRobotId());
         } catch (Exception e) {
@@ -116,12 +118,22 @@ public class ProcessManager {
         }
     }
 
-    public void jobCompleted(ProcessFlowContext ctx, String siteId) {
+    public void jobComplete(ProcessFlowContext ctx, String siteId) {
         try {
             // Job completion logic placeholder
             String processId = ctx.getProcessId();
-            TransferControl transfer = new TransferControl(processId,siteId);
+            TransferControl transfer = baseService.findByEntity(TransferControl.class, new TransferControl(processId,siteId));
 
+            //workGroup + _ + workId
+            EventInfo eventInfo = new EventInfoBuilder()
+                    .addRequestId(BaseConstants.TAG_NAME.ACS)
+                    .addWorkId(RuntimeUtils.getCurrentMethodName().toLowerCase())
+                    .addWorkGroupId(BaseConstants.TAG_NAME.MiddleWare)
+                    .addUserId(transfer.getAssigned_robot_id())
+                    .addSiteId(siteId)
+                    .build();
+
+            executeHandler(eventInfo, new JSONObject());
 
         } catch (Exception e) { logger.error("Error in process JOB {}: {}", ctx.getProcessId(), e.getMessage(), e); }
     }

@@ -2,6 +2,7 @@ package com.hubis.acs.middleware.work;
 
 import com.hubis.acs.common.constants.BaseConstants;
 import com.hubis.acs.common.entity.RobotMaster;
+import com.hubis.acs.common.entity.TransferControl;
 import com.hubis.acs.common.entity.vo.RobotMasterId;
 import com.hubis.acs.common.handler.impl.GlobalWorkHandler;
 import com.hubis.acs.common.utils.CommonUtils;
@@ -20,8 +21,8 @@ public class MoveStart extends GlobalWorkHandler {
         String robotId = eventInfo.getUserId();
         String siteId = eventInfo.getSiteId();
 
-        RobotMaster robotKey = new RobotMaster(robotId, siteId);
-        RobotMaster robot = baseService.findByEntity(RobotMaster.class, robotKey);
+        RobotMaster robot = baseService.findByEntity(RobotMaster.class, new RobotMaster(robotId, siteId));
+        TransferControl transfer = baseService.findByEntity(TransferControl.class, new TransferControl(robot.getTransfer_id(), siteId));
 
         if(CommonUtils.isNullOrEmpty(robot)) {
             logger.warn("robot not found");
@@ -32,8 +33,12 @@ public class MoveStart extends GlobalWorkHandler {
             logger.warn("robot Assigned Transfer not found");
         
         //상태 업데이트
-        robot.setStatus_tx(BaseConstants.ROBOT.STATE.MOVING);
+        robot.setStatus_tx(BaseConstants.ROBOT.STATE.RUNNING);
         baseService.saveOrUpdate(eventInfo,robot);
+        
+        //작업 세부상태 업데이트
+        transfer.setSub_status_tx(BaseConstants.TRANSFER.SUB_STATE.RUNNING);
+        baseService.saveOrUpdate(eventInfo,transfer);
 
         return result;
     }

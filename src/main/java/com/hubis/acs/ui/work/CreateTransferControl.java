@@ -25,7 +25,7 @@ public class CreateTransferControl extends GlobalWorkHandler {
         int transferPriority = dataSet.optInt("transferPriority", 10);
 
         TransferControl transfer = new TransferControl(transferId, eventInfo.getSiteId());
-        transfer.setTransfer_st(BaseConstants.Transfer.State.READY);
+        transfer.setTransfer_status_tx(BaseConstants.TRANSFER.STATE.READY);
         transfer.setPriority_no(transferPriority);
         transfer.setSource_port_id(transferSource);
         transfer.setDestination_port_id(transferDest);

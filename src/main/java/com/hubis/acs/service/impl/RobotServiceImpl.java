@@ -22,10 +22,7 @@ public class RobotServiceImpl implements RobotService {
     private final BaseService baseService;
 
     public void refreshRobotConnectionStatus(String robotId, String siteCd) {
-        RobotMaster robots = new RobotMaster();
-        robots.setRobot_id(robotId);
-        robots.setSite_cd(siteCd);
-
+        RobotMaster robots = new RobotMaster(robotId, siteCd);
         RobotMaster robot = baseService.findByEntity(RobotMaster.class, robots);
         if (robot != null && robot.getUsable_fl() == BaseConstants.Usable.UNUSABLE) {
             robot.setUsable_fl(BaseConstants.Usable.USABLE);

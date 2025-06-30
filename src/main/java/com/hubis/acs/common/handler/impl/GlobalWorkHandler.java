@@ -1,5 +1,6 @@
 package com.hubis.acs.common.handler.impl;
 
+import com.hubis.acs.common.cache.BaseConstantCache;
 import com.hubis.acs.common.constants.BaseConstants;
 import com.hubis.acs.common.entity.vo.EventInfo;
 import com.hubis.acs.common.handler.GlobalWorkHandlerIF;
@@ -21,6 +22,7 @@ public class GlobalWorkHandler implements GlobalWorkHandlerIF {
     protected ApplicationContext appContext;
     protected CommonDAO commonDAO;
     protected EventInfo eventInfo;
+    protected BaseConstantCache baseConstantCache;
 
     //Service
     protected BaseService baseService;
@@ -46,6 +48,7 @@ public class GlobalWorkHandler implements GlobalWorkHandlerIF {
         this.appContext = appContext;
         this.commonDAO = commonDAO;
         this.eventInfo = eventInfo;
+        this.baseConstantCache = appContext.getBean(BaseConstantCache.class);
         this.baseService = appContext.getBean(BaseService.class);
         this.writerService = appContext.getBean(WriterService.class);
         this.processManager = appContext.getBean(ProcessManager.class);  // ← 타입 기반으로 변경

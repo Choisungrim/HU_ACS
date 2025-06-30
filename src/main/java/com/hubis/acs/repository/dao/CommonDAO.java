@@ -35,6 +35,7 @@ public class CommonDAO {
     }
 
     public <T> T selectOne(Class<T> clazz, T example) {
+
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<T> query = cb.createQuery(clazz);
         Root<T> root = query.from(clazz);
@@ -66,8 +67,13 @@ public class CommonDAO {
                 .setMaxResults(1)
                 .getResultList();
 
-        return result.isEmpty() ? null : result.get(0);
+        if (result.isEmpty()) return null;
+
+        // ✅ merge()로 영속화 보장
+        return entityManager.merge(result.get(0));
     }
+
+
 
     // 다중 조회
     public <T> List<T> selectList(Class<T> clazz, String field, Object value) {
@@ -122,7 +128,7 @@ public class CommonDAO {
         try {
             entityManager.persist(entity);
             insertHistory(entity);
-            entityManager.flush();
+//            entityManager.flush();
             return true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -137,7 +143,6 @@ public class CommonDAO {
         try {
             entityManager.merge(entity);
             insertHistory(entity);
-            entityManager.flush();
             return true;
         } catch (Exception e) {
             System.err.println("merge failed for entity: "+ entity.getClass().getSimpleName() +""+ e);
@@ -192,7 +197,7 @@ public class CommonDAO {
         try {
             entityManager.merge(entity);
             insertHistory(entity);
-            entityManager.flush();
+//            entityManager.flush();
             return true;
         } catch (Exception e) {
             return false;
@@ -205,10 +210,30 @@ public class CommonDAO {
         if (entity != null) {
             insertHistory(entity);
             entityManager.remove(entity);
-            entityManager.flush();
+//            entityManager.flush();
             return true;
         }
         return false;
+    }
+
+    public <T> boolean delete(T entity) {
+        try {
+            Class<T> clazz = (Class<T>) entity.getClass();
+            Object pk = entityManager.getEntityManagerFactory().getPersistenceUnitUtil().getIdentifier(entity);
+            T managed = entityManager.find(clazz, pk); // ← 진짜 영속 객체 확보
+
+            if (managed == null) {
+                System.out.println("삭제 대상 엔티티를 찾을 수 없음: "+ entity);
+                return false;
+            }
+
+            insertHistory(managed);
+            entityManager.remove(managed);
+            return true;
+        } catch (Exception e) {
+            System.out.println("Delete 실패: "+ e.getMessage());  // 반드시 로그 찍기
+            return false;
+        }
     }
 
 

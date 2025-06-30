@@ -19,21 +19,25 @@ class BaseServiceImpl implements BaseService {
     private final CommonDAO commonDAO;
 
     @Override
+    @Transactional
     public <T> T findById(Class<T> clazz, Object id) {
         return commonDAO.selectOneById(clazz, id);
     }
 
     @Override
+    @Transactional
     public <T> T findByEntity(Class<T> clazz, T entity) {
         return commonDAO.selectOne(clazz, entity);
     }
 
     @Override
+    @Transactional
     public <T> List<T> findByField(Class<T> clazz, String field, Object value) {
         return commonDAO.selectList(clazz, field, value);
     }
 
     @Override
+    @Transactional
     public <T> List<T> findByConditions(Class<T> clazz, T example) {
         return commonDAO.selectList(clazz, example);
     }
@@ -68,6 +72,14 @@ class BaseServiceImpl implements BaseService {
     @Transactional
     public <T> boolean delete(Class<T> clazz, Object id) {
         return commonDAO.delete(clazz, id);
+    }
+
+    @Override
+    @Transactional
+    public <T> boolean delete(EventInfo eventInfo, T entity)
+    {
+        setCommonModule(eventInfo, entity, false);
+        return commonDAO.delete(entity);
     }
 
     private void setCommonModule(EventInfo eventInfo, Object entity,  boolean isNew) {

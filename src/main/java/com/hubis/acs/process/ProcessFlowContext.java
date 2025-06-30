@@ -108,7 +108,7 @@ public class ProcessFlowContext {
     }
 
     public void tryNotifyState(String txId, String status) {
-        if(TaskState.COMPLETE.name().equalsIgnoreCase(status.toUpperCase())){
+        if(TaskState.DONE.name().equalsIgnoreCase(status.toUpperCase())){
             CountDownLatch latch = stateLatches.get(txId);
             if (latch != null) {
                 latch.countDown();

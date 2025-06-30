@@ -1,6 +1,8 @@
 package com.hubis.acs.service;
 
+import com.hubis.acs.common.entity.RobotMaster;
 import com.hubis.acs.common.entity.vo.EventInfo;
+import com.hubis.acs.common.entity.vo.RobotMasterId;
 
 import java.util.List;
 
@@ -22,4 +24,7 @@ public interface BaseService {
     <T> boolean update(EventInfo eventInfo, T entity);
 
     <T> boolean delete(Class<T> clazz, Object id);
+
+    <T> boolean delete(EventInfo eventInfo, T entity);
+
 }

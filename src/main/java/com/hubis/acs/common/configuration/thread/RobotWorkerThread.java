@@ -93,8 +93,10 @@ public class RobotWorkerThread implements Runnable {
         String workId;
         if ("running".equalsIgnoreCase(status)) {
             workId = behavior + "_start";
-        } else if ("complete".equalsIgnoreCase(status)) {
+        } else if ("done".equalsIgnoreCase(status)) {
             workId = behavior + "_complete";
+        } else if ("jobcomplete".equalsIgnoreCase(status)) {
+            workId = "jobcomplete";
         } else {
             workId = behavior + "_" + status;
         }

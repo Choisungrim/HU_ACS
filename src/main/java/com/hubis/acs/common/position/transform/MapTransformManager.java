@@ -32,19 +32,19 @@ public class MapTransformManager {
         }
 
         public Point toGlobal(Point local) {
-            double scaledX = local.x * resolution;
-            double scaledY = local.y * resolution;
+            double scaledX = local.getX() * resolution;
+            double scaledY = local.getY() * resolution;
 
             double theta = Math.toRadians(rotationDeg);
             double x = scaledX * Math.cos(theta) - scaledY * Math.sin(theta);
             double y = scaledX * Math.sin(theta) + scaledY * Math.cos(theta);
 
-            return new Point(x + localOriginInGlobal.x, y + localOriginInGlobal.y);
+            return new Point(x + localOriginInGlobal.getX(), y + localOriginInGlobal.getY());
         }
 
         public Point toLocal(Point global) {
-            double dx = global.x - localOriginInGlobal.x;
-            double dy = global.y - localOriginInGlobal.y;
+            double dx = global.getX() - localOriginInGlobal.getX();
+            double dy = global.getY() - localOriginInGlobal.getY();
 
             double theta = Math.toRadians(-rotationDeg);
             double x = dx * Math.cos(theta) - dy * Math.sin(theta);

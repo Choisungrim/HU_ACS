@@ -10,6 +10,7 @@ import com.hubis.acs.common.position.cache.RobotPositionCache;
 import com.hubis.acs.common.position.model.GlobalZone;
 import com.hubis.acs.common.position.model.Point;
 import com.hubis.acs.common.position.model.Position;
+import com.hubis.acs.common.utils.CommonUtils;
 import com.hubis.acs.common.utils.PositionUtils;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -56,7 +57,8 @@ public class PositionChange extends GlobalWorkHandler {
         robotPositionCache.put(robotId, globalPos);
 
         // 목적지 기반 경로 블록 확인
-        List<Position> path = generateSurroundingPath(globalPos, 100.0, 10.0);
+        List<Position> curBox = generateSurroundingPath(globalPos, 598);
+        List<Position> prevBox = generateSurroundingPath(prevGlobalPos, 598);
 
         String destId = processManager.getCurrentDestination(robotId);
         if (destId != null) {
@@ -71,56 +73,35 @@ public class PositionChange extends GlobalWorkHandler {
             logger.warn("[{}] at ({},{}) is destination is null", robotId, x, y);
         }
 
-        // 경로 상 블록 여부 확인
-        if (pathValidator.isPathBlocked(eventInfo.getSiteId(), mapuuid, path, robotId)) {
+        // 경로 상 블록 여부 확인 + 점유
+        if (pathValidator.isPathBlocked(eventInfo.getSiteId(), mapuuid, curBox, robotId)) {
             logger.warn("[{}] Path is blocked at pos {}", robotId, globalPos);
             // 추후: 정지 명령 또는 회피로직 삽입
         }
         
-        // zone 점유
-        updateZoneOccupancy(mapuuid, prevGlobalPos, globalPos, robotId);
+        // 이전위치에 대한 점유 해제
+        pathValidator.releaseExitedZones(eventInfo, mapuuid, prevBox, curBox, robotId);
 
         writerService.sendToUIPositionChange(eventInfo, BaseConstants.RETURNCODE.Success, globalPos);
 
         return result;
     }
 
-    private List<Position> generateSurroundingPath(Position center, double radius, double step) {
-        List<Position> path = new ArrayList<>();
-        double startX = center.getX() - radius;
-        double endX = center.getX() + radius;
-        double startY = center.getY() - radius;
-        double endY = center.getY() + radius;
+    private List<Position> generateSurroundingPath(Position center, double halfWidth) {
+        if(CommonUtils.isNullOrEmpty(center))
+            return null;
 
-        for (double x = startX; x <= endX; x += step) {
-            for (double y = startY; y <= endY; y += step) {
-                path.add(new Position(x, y, 0));
-            }
-        }
-        return path;
+        double cx = center.getX();
+        double cy = center.getY();
+
+        return Arrays.asList(
+                new Position(cx - halfWidth, cy - halfWidth, 0),
+                new Position(cx + halfWidth, cy - halfWidth, 0),
+                new Position(cx + halfWidth, cy + halfWidth, 0),
+                new Position(cx - halfWidth, cy + halfWidth, 0)
+        );
     }
 
-    private void updateZoneOccupancy(long mapuuid, Position prevPos, Position currPos, String robotId) {
-        boolean isFirst = (prevPos == null);
-        var zones = globalZoneManager.getZonesByMap(mapuuid);
 
-        for (GlobalZone zone : zones) {
-            boolean wasIn = !isFirst && zone.contains(prevPos);
-            boolean isIn = zone.contains(currPos);
-
-            if (isFirst && isIn) {
-                if (zoneLockManager.lock(eventInfo.getSiteId(), zone.getZoneId(), robotId)) {
-                    logger.info("[{}] FIRST entry into zone [{}]", robotId, zone.getZoneId());
-                }
-            } else if (!wasIn && isIn) {
-                if (zoneLockManager.lock(eventInfo.getSiteId(), zone.getZoneId(), robotId)) {
-                    logger.info("[{}] Entered zone [{}]", robotId, zone.getZoneId());
-                }
-            } else if (wasIn && !isIn) {
-                zoneLockManager.release(eventInfo.getSiteId(), zone.getZoneId(), robotId);
-                logger.info("[{}] Exited zone [{}]", robotId, zone.getZoneId());
-            }
-        }
-    }
 }
 

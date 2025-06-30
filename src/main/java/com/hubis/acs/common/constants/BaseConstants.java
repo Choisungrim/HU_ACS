@@ -10,6 +10,7 @@ public class BaseConstants {
                 public final static String GeneralWork = "com.hubis.acs.common.work";
                 public final static String UIWork = "com.hubis.acs.ui.work";
                 public final static String ACSWork = "com.hubis.acs.acs.work";
+                public final static String MIDDLEWAREWork = "com.hubis.acs.middleware.work";
             }
         }
     }
@@ -104,14 +105,14 @@ public class BaseConstants {
         public static class STATE
         {
             public final static String IDLE = "idle";
-            public final static String MOVING = "moving";
+            public final static String ALLOCATED = "allocated";
+            public final static String RUNNING = "running";
             public final static String LOADING = "loading";
             public final static String UNLOADING = "unloading";
             public final static String WAITING = "waiting";
             public final static String BLOCKING = "blocking";
             public final static String CHARGING = "charging";
-
-
+            public final static String ALARM = "alarm";
         }
     }
 
@@ -129,16 +130,34 @@ public class BaseConstants {
 
 
 
-    public static class Transfer
+    public static class TRANSFER
     {
-        public static class State
+        public static class STATE
         {
             public final static String READY = "ready";
             public final static String QUEUED = "queued";
-            public final static String RUNNING = "running";
-            public final static String LOADING = "loading";
-            public final static String UNLOADING = "unloading";
+            public final static String TRANSFERRING = "transferring";
+            public final static String CANCELED = "canceled";
+            public final static String ABORTED = "aborted";
+            public final static String CHARGING = "charging";
             public final static String COMPLETED = "completed";
+        }
+
+        public static class SUB_STATE
+        {
+            public final static String RUNNING = "running";
+            public final static String RUN_COMPLETE = "run_complete";
+            public final static String LOADING = "loading";
+            public final static String LOAD_COMPLETE = "load_complete";
+            public final static String UNLOADING = "unloading";
+            public final static String UNLOAD_COMPLETE = "unload_complete";
+            public final static String WAITING = "waiting";
+            public final static String BLOCKING = "blocking";
+            public final static String CANCELING = "canceling";
+            public final static String ABORTING = "aborting";
+            public final static String PRECHARGING = "precharging";
+            public final static String CHARGING = "charging";
+            public final static String CHARGED = "charged";
         }
     }
 
@@ -156,15 +175,18 @@ public class BaseConstants {
         public final static int USABLE = 1;
         public final static int UNUSABLE = 0;
     }
-    public static class Cache
+    public static class ConstantsCache
     {
         public static class ConstType
         {
-            public final static String WORK = "WORK";
+            public final static String SYSTEM = "SYSTEM";
+            public final static String TRAFFIC = "TRAFFIC";
         }
         public static class ConstCode
         {
-            public final static String WORKABLE_ROBOT_BATTERY = "WORKABLE_ROBOT_BATTERY";
+            public final static String POSITION_TOLERANCE = "VALIDATION_001";
+            public final static String WORKABLE_ROBOT_BATTERY = "WORK_001";
+            public final static String AUTOMATE_ASSIGNED = "WORK_002";
         }
     }
 

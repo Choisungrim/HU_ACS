@@ -8,6 +8,17 @@ import java.util.*;
 
 public class ConvertUtils {
 
+    public static boolean toBoolean(String string)
+    {
+        return Boolean.parseBoolean(string);
+    }
+
+    public static boolean toBooleanExtended(String string) {
+        if (string == null) return false;
+        String s = string.trim().toLowerCase();
+        return s.equals("true") || s.equals("1") || s.equals("y");
+    }
+
     public static String toString(Object obj)
     {
         String res = "";

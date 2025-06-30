@@ -110,10 +110,11 @@ public class TaskService {
 
         if (selected != null) {
             transfer.setAssigned_robot_id(selected.getRobot_id());
-            transfer.setTransfer_st(BaseConstants.Transfer.State.RUNNING);
+            transfer.setTransfer_status_tx(BaseConstants.TRANSFER.STATE.TRANSFERRING);
             System.out.println("저장결과 작업 :"+baseService.saveOrUpdate(eventInfo, transfer));
 
             selected.setTransfer_id(transfer.getTransfer_id());
+            selected.setStatus_tx(BaseConstants.ROBOT.STATE.ALLOCATED);
 
             System.out.println("저장결과 로봇 :"+baseService.saveOrUpdate(eventInfo, selected));
             System.out.println("[INFO] 로봇 '" + selected.getRobot_id() + "' → 작업 '" + transfer.getTransfer_id() + "' 할당 완료");
@@ -126,7 +127,7 @@ public class TaskService {
     }
 
     private Map<String, NodeMaster> getAvailableRobotsInSameMap(List<RobotMaster> robotlst, Long mapUuid, String siteCd) {
-        ConstMaster constVal = baseConstantCache.get(siteCd, BaseConstants.Cache.ConstType.WORK, BaseConstants.Cache.ConstCode.WORKABLE_ROBOT_BATTERY);
+        ConstMaster constVal = baseConstantCache.get(siteCd, BaseConstants.ConstantsCache.ConstType.SYSTEM, BaseConstants.ConstantsCache.ConstCode.WORKABLE_ROBOT_BATTERY);
         int minBattery = constVal != null ? Integer.parseInt(constVal.getConstant_val()) : 0;
 
         Set<String> assignedIds = new HashSet<>(transferRepository.findAllAssignedRobotIds());
@@ -186,8 +187,8 @@ public class TaskService {
     }
 
     private void transerSetQueue(EventInfo eventInfo, TransferControl transfer) {
-        if(transfer.getTransfer_st()!=BaseConstants.Transfer.State.QUEUED) {
-            transfer.setTransfer_st(BaseConstants.Transfer.State.QUEUED);
+        if(transfer.getTransfer_status_tx()!=BaseConstants.TRANSFER.STATE.QUEUED) {
+            transfer.setTransfer_status_tx(BaseConstants.TRANSFER.STATE.QUEUED);
             baseService.saveOrUpdate(eventInfo,transfer);
         }
     }

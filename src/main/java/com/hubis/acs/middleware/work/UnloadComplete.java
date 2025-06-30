@@ -61,6 +61,7 @@ public class UnloadComplete extends GlobalWorkHandler {
 
         logger.info("UnLoadComplete 검증 성공: robotType={} robotId={}", robotType, robotId);
         transfer.setUnload_end_at(TimeUtils.getLocalDateCurrentTime());
+        transfer.setSub_status_tx(BaseConstants.TRANSFER.SUB_STATE.UNLOAD_COMPLETE);
         baseService.saveOrUpdate(eventInfo,transfer);
         return result;
     }

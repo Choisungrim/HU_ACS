@@ -64,6 +64,7 @@ public class LoadComplete extends GlobalWorkHandler {
 
         logger.info("LoadComplete 검증 성공: robotType={} robotId={}", robotType, robotId);
         transfer.setLoad_end_at(TimeUtils.getLocalDateCurrentTime());
+        transfer.setSub_status_tx(BaseConstants.TRANSFER.SUB_STATE.LOAD_COMPLETE);
         baseService.saveOrUpdate(eventInfo,transfer);
         return result;
     }

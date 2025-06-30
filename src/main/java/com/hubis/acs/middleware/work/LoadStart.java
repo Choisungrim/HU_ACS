@@ -34,12 +34,13 @@ public class LoadStart extends GlobalWorkHandler {
 
         //상태 업데이트
         robot.setStatus_tx(BaseConstants.ROBOT.STATE.LOADING);
-        boolean update = baseService.update(eventInfo,robot);
+        baseService.update(eventInfo,robot);
 
         transfer.setLoad_start_at(TimeUtils.getLocalDateCurrentTime());
+        transfer.setSub_status_tx(BaseConstants.TRANSFER.SUB_STATE.LOADING);
         baseService.update(eventInfo,transfer);
 
-        System.out.println("▶ RobotMaster loadStatus update result = " + update);
+        System.out.println("▶ RobotMaster loadStatus update " + robot.getTransfer_id());
         return result;
     }
 }

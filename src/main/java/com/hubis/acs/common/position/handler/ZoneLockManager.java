@@ -12,6 +12,12 @@ public class ZoneLockManager {
     // siteCd -> (zoneId -> robotId)
     private final ConcurrentHashMap<String, ConcurrentHashMap<String, String>> lockedZones = new ConcurrentHashMap<>();
 
+    private final ConcurrentHashMap<String, Object> zoneLocks = new ConcurrentHashMap<>();
+
+    public Object getZoneLock(String zoneId) {
+        return zoneLocks.computeIfAbsent(zoneId, k -> new Object());
+    }
+
     /** 점유 시도 */
     public boolean lock(String siteCd, String zoneId, String robotId) {
         lockedZones.putIfAbsent(siteCd, new ConcurrentHashMap<>());
