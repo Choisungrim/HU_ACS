@@ -21,6 +21,7 @@ public class TransferControl extends BaseEntity {
     private String transfer_status_tx; // 작업 상태
     private String sub_status_tx;// 작업의 세부 상태
     private int priority_no; // 작업 우선 순위
+    private String carrier_id; //대차정보
     private String source_port_id; // 작업 대상 포트 명칭
     private String destination_port_id; // 최종 목적지 예치 포트 명칭
     private java.time.LocalDateTime load_start_at; // 물품 수령 시작 시간

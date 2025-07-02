@@ -16,6 +16,11 @@ public class TransferControlId implements Serializable {
 
     public TransferControlId() {}
 
+    public TransferControlId(String transfer_id, String site_cd) {
+        this.transfer_id = transfer_id;
+        this.site_cd = site_cd;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

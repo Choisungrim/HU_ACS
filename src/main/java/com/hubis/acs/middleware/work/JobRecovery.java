@@ -12,15 +12,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-@Component("middleware_job_complete")
-public class JobComplete extends GlobalWorkHandler {
-    private static final Logger logger = LoggerFactory.getLogger(JobComplete.class);
+@Component("middleware_job_recovery")
+public class JobRecovery  extends GlobalWorkHandler {
+    private static final Logger logger = LoggerFactory.getLogger(JobRecovery.class);
 
     @Override
     public String doWork(JSONObject message) throws Exception {
-
         String robotId = eventInfo.getUserId();
         String siteId = eventInfo.getSiteId();
+        String failedTaskName = message.getString("failedTask");
 
         RobotMaster robot = baseService.findById(RobotMaster.class, new RobotMasterId(robotId, siteId));
         TransferControl transfer = baseService.findById(TransferControl.class, new TransferControlId(robot.getTransfer_id(),siteId));
@@ -29,14 +29,11 @@ public class JobComplete extends GlobalWorkHandler {
         robot.setTransfer_id("");
         baseService.saveOrUpdate(eventInfo, robot);
 
-        transfer.setTransfer_status_tx(BaseConstants.TRANSFER.STATE.COMPLETED);
-        transfer.setSub_status_tx(BaseConstants.TRANSFER.STATE.COMPLETED);
-        transfer.setJob_complete_at(TimeUtils.getLocalDateCurrentTime());
+        transfer.setTransfer_status_tx(BaseConstants.TRANSFER.STATE.QUEUED);  // 또는 RETRY_READY, ABORTED 등
+        transfer.setSub_status_tx(failedTaskName + "_FAIL");
         baseService.saveOrUpdate(eventInfo, transfer);
 
-        baseService.delete(eventInfo, transfer);
-
-        logger.info("Job complete succesful");
+        logger.info("Job recovery succesful");
         return result;
     }
 }

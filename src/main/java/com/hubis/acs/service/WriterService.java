@@ -44,7 +44,7 @@ public class WriterService {
 
     public void sendToUIPositionChange(EventInfo eventInfo, String returnCode, Position position) {
         JSONObject msg = new JSONObject();
-        String topic = "web/backend/positionchange";
+        String topic = "web/backend/event/position_change";
 
         JSONObject header = makeHeader(eventInfo);
         header.put(BaseConstants.TAG_NAME.ReturnCode, returnCode);

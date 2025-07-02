@@ -69,7 +69,8 @@ public class BaseConstants {
         }
         public static class Task
         {
-            public final static String MOVE = "move";
+            public final static String SOURCE_MOVE = "source_move";
+            public final static String DEST_MOVE = "dest_move";
             public final static String LOAD = "load";
             public final static String UNLOAD = "unload";
             public static class State {

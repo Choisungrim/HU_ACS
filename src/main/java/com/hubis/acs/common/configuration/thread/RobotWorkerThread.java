@@ -81,8 +81,9 @@ public class RobotWorkerThread implements Runnable {
 
     private void handleResponse(JSONObject reqMsg, String robotId) {
         String transactionId = reqMsg.optString("tid", TimeUtils.getCurrentTimekey());
-
-        processNotifyService.notifyResponse(transactionId, robotId);
+        String reason = reqMsg.optString("task_reason");
+        if(!reason.equalsIgnoreCase("failure"))
+            processNotifyService.notifyResponse(transactionId, robotId);
     }
 
     private void handleTask(JSONObject reqMsg, String requestId, String siteId, String robotId) {
@@ -95,8 +96,6 @@ public class RobotWorkerThread implements Runnable {
             workId = behavior + "_start";
         } else if ("done".equalsIgnoreCase(status)) {
             workId = behavior + "_complete";
-        } else if ("jobcomplete".equalsIgnoreCase(status)) {
-            workId = "jobcomplete";
         } else {
             workId = behavior + "_" + status;
         }

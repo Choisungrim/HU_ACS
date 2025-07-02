@@ -7,7 +7,6 @@ import com.hubis.acs.common.entity.TransferControl;
 import com.hubis.acs.common.entity.vo.EventInfo;
 import com.hubis.acs.common.handler.BaseExecutorHandler;
 import com.hubis.acs.common.utils.EventInfoBuilder;
-import com.hubis.acs.common.utils.RuntimeUtils;
 import com.hubis.acs.common.utils.TimeUtils;
 import com.hubis.acs.service.BaseService;
 import com.hubis.acs.service.WriterService;
@@ -37,7 +36,7 @@ public class ProcessManager {
     private final Map<String, EventInfo> eventInfoMap = new ConcurrentHashMap<>();
     private final Map<String, JSONObject> reqMsgMap = new ConcurrentHashMap<>();
     private final Set<String> runningRobots = ConcurrentHashMap.newKeySet();
-    private static final int MAX_RETRY = 3;
+    private static final int MAX_RETRY = 10;
     private static final int RESPONSE_TIMEOUT_SEC = 5;
     private static final int STATE_TIMEOUT_MIN = 30;
 
@@ -55,12 +54,12 @@ public class ProcessManager {
 
     private void runProcess(ProcessFlowContext ctx, String source, String dest, String siteId) {
         try {
-            executeWithRetry(() -> moveTask(ctx, TimeUtils.getCurrentTimekey(), source), BaseConstants.ROBOT.Task.MOVE, ctx);
-            executeWithRetry(() -> loadTask(ctx, TimeUtils.getCurrentTimekey(), source), BaseConstants.ROBOT.Task.LOAD, ctx);
-            executeWithRetry(() -> moveTask(ctx, TimeUtils.getCurrentTimekey(), dest), BaseConstants.ROBOT.Task.MOVE, ctx);
-            executeWithRetry(() -> unLoadTask(ctx, TimeUtils.getCurrentTimekey(), dest), BaseConstants.ROBOT.Task.UNLOAD, ctx);
+            executeWithRetry(() -> moveTask(ctx, TimeUtils.getCurrentTimekey(), source), BaseConstants.ROBOT.Task.SOURCE_MOVE, ctx, siteId);
+            executeWithRetry(() -> loadTask(ctx, TimeUtils.getCurrentTimekey(), source), BaseConstants.ROBOT.Task.LOAD, ctx, siteId);
+            executeWithRetry(() -> moveTask(ctx, TimeUtils.getCurrentTimekey(), dest), BaseConstants.ROBOT.Task.DEST_MOVE, ctx, siteId);
+            executeWithRetry(() -> unLoadTask(ctx, TimeUtils.getCurrentTimekey(), dest), BaseConstants.ROBOT.Task.UNLOAD, ctx, siteId);
 
-            jobComplete(ctx, siteId);
+            handleProcessComplete(ctx, siteId);
 
             logger.info("Process {} completed for robot {}", ctx.getProcessId(), ctx.getRobotId());
         } catch (Exception e) {
@@ -71,7 +70,7 @@ public class ProcessManager {
         }
     }
 
-    private void executeWithRetry(Runnable taskAction, String taskName, ProcessFlowContext ctx) {
+    private void executeWithRetry(Runnable taskAction, String taskName, ProcessFlowContext ctx, String siteId) {
         int retryCount = 0;
         while (retryCount < MAX_RETRY) {
             try {
@@ -82,7 +81,13 @@ public class ProcessManager {
                 logger.warn("Retry {} for task {} on process {}", retryCount, taskName, ctx.getProcessId());
             }
         }
+        if(taskName.equalsIgnoreCase(BaseConstants.ROBOT.Task.SOURCE_MOVE))
+            handleTaskFailure(ctx, taskName, siteId);
+        
+        
+        //응답 실패 시 작업 취소 메뉴얼 고려
         throw new RuntimeException("Max retries exceeded for task: " + taskName);
+
     }
 
     public void moveTask(ProcessFlowContext ctx, String txId, String destination) {
@@ -118,7 +123,7 @@ public class ProcessManager {
         }
     }
 
-    public void jobComplete(ProcessFlowContext ctx, String siteId) {
+    public void handleProcessComplete(ProcessFlowContext ctx, String siteId) {
         try {
             // Job completion logic placeholder
             String processId = ctx.getProcessId();
@@ -127,7 +132,7 @@ public class ProcessManager {
             //workGroup + _ + workId
             EventInfo eventInfo = new EventInfoBuilder()
                     .addRequestId(BaseConstants.TAG_NAME.ACS)
-                    .addWorkId(RuntimeUtils.getCurrentMethodName().toLowerCase())
+                    .addWorkId("job_complete")
                     .addWorkGroupId(BaseConstants.TAG_NAME.MiddleWare)
                     .addUserId(transfer.getAssigned_robot_id())
                     .addSiteId(siteId)
@@ -203,6 +208,37 @@ public class ProcessManager {
     }
 
     public record RobotTaskStatus(TaskType task, String destination) {}
+
+    private void handleTaskFailure(ProcessFlowContext ctx, String failedTaskName, String siteId) {
+        String processId = ctx.getProcessId();
+        String robotId = ctx.getRobotId();
+
+        try {
+            // 상태 복구를 위한 EventInfo 생성
+            EventInfo eventInfo = new EventInfoBuilder()
+                    .addRequestId(BaseConstants.TAG_NAME.ACS)
+                    .addWorkId("job_recovery")
+                    .addWorkGroupId(BaseConstants.TAG_NAME.MiddleWare)
+                    .addUserId(robotId)
+                    .addSiteId(siteId)
+                    .build();
+
+
+            // 필요 시, 작업 재할당을 위한 이벤트 호출
+            executeHandler(eventInfo, new JSONObject()
+                    .put("processId", processId)
+                    .put("failedTask", failedTaskName));
+
+            logger.warn("Process {} failed at {} task, recovery triggered.", processId, failedTaskName);
+        } catch (Exception e) {
+            logger.error("Failed to handle task failure for process {}: {}", ctx.getProcessId(), e.getMessage(), e);
+        } finally {
+            // 로봇 실행 중 목록에서 제거 (retry 시 재할당 허용)
+            runningRobots.remove(robotId);
+            processMap.remove(processId);
+        }
+    }
+
 }
 
 
