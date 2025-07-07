@@ -20,6 +20,7 @@ public class CreateTransferControl extends GlobalWorkHandler {
 
         String transferId = dataSet.optString("transferId", TimeUtils.getCurrentTimekey());
         String transferDest = dataSet.optString("transferDestination", "");
+        String transferType = dataSet.optString("transferType", "");
         String transferSource = dataSet.optString("transferSource", "");
         String transferRobot = dataSet.optString("transferRobot", "");
         int transferPriority = dataSet.optInt("transferPriority", 10);
@@ -27,6 +28,7 @@ public class CreateTransferControl extends GlobalWorkHandler {
         TransferControl transfer = new TransferControl(transferId, eventInfo.getSiteId());
         transfer.setTransfer_status_tx(BaseConstants.TRANSFER.STATE.READY);
         transfer.setPriority_no(transferPriority);
+        transfer.setTransfer_tp(transferType);
         transfer.setSource_port_id(transferSource);
         transfer.setDestination_port_id(transferDest);
         transfer.setAssigned_robot_id(transferRobot);

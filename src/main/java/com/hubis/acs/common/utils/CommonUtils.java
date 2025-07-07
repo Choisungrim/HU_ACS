@@ -285,6 +285,9 @@ public class CommonUtils {
         if (str.equals(""))
             return true;
 
+        if(str.equals("unknown"))
+            return true;
+
         return false;
     }
 

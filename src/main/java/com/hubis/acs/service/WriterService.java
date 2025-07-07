@@ -2,6 +2,7 @@ package com.hubis.acs.service;
 
 import com.hubis.acs.common.adapter.mqtt.Publisher;
 import com.hubis.acs.common.constants.BaseConstants;
+import com.hubis.acs.common.entity.RobotMaster;
 import com.hubis.acs.common.entity.vo.EventInfo;
 import com.hubis.acs.common.position.model.Position;
 import com.hubis.acs.common.utils.EventInfoBuilder;
@@ -50,13 +51,56 @@ public class WriterService {
         header.put(BaseConstants.TAG_NAME.ReturnCode, returnCode);
 
         JSONObject dataSet = new JSONObject();
+        dataSet.put("robotId",eventInfo.getUserId());
         dataSet.put("x", position.getX());
         dataSet.put("y", position.getY());
-        dataSet.put("deg", position.getTheta());
+        dataSet.put("theta", position.getTheta());
+        dataSet.put("siteId", eventInfo.getSiteId());
 
         msg.put(BaseConstants.TAG_NAME.Header, header);
         msg.put(BaseConstants.TAG_NAME.DataSet, dataSet);
 
+        publisher.publish(topic, msg.toString());
+    }
+
+    public void sendToUiRobotStateChange(EventInfo eventInfo, String returnCode, RobotMaster robot, String destinationPort, String carrierId)
+    {
+        JSONObject msg = new JSONObject();
+        String topic = "web/backend/event/state_change";
+
+        JSONObject header = makeHeader(eventInfo);
+        header.put(BaseConstants.TAG_NAME.ReturnCode, returnCode);
+
+        JSONObject dataSet = new JSONObject();
+        dataSet.put("robotId",eventInfo.getUserId());
+        dataSet.put("robotModel", robot.getModel_nm());
+        dataSet.put("robotState", robot.getStatus_tx());
+        dataSet.put("goalPort", destinationPort);
+        dataSet.put("carrierId",carrierId);
+        dataSet.put("transferId",robot.getTransfer_id());
+        dataSet.put("siteId", eventInfo.getSiteId());
+
+        msg.put(BaseConstants.TAG_NAME.Header, header);
+        msg.put(BaseConstants.TAG_NAME.DataSet, dataSet);
+
+        publisher.publish(topic, msg.toString());
+    }
+
+    public void sendToUiLocationChange(EventInfo eventInfo, String returnCode, String currentLocation)
+    {
+        JSONObject msg = new JSONObject();
+        String topic = "web/backend/event/state_change";
+
+        JSONObject header = makeHeader(eventInfo);
+        header.put(BaseConstants.TAG_NAME.ReturnCode, returnCode);
+
+        JSONObject dataSet = new JSONObject();
+        dataSet.put("robotId",eventInfo.getUserId());
+        dataSet.put("currentLocation",currentLocation);
+        dataSet.put("siteId", eventInfo.getSiteId());
+
+        msg.put(BaseConstants.TAG_NAME.Header, header);
+        msg.put(BaseConstants.TAG_NAME.DataSet, dataSet);
 
         publisher.publish(topic, msg.toString());
     }

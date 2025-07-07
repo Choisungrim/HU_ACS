@@ -35,6 +35,7 @@ public class LoadStart extends GlobalWorkHandler {
         //상태 업데이트
         robot.setStatus_tx(BaseConstants.ROBOT.STATE.LOADING);
         baseService.update(eventInfo,robot);
+        writerService.sendToUiRobotStateChange(eventInfo, result, robot, transfer.getSource_port_id(), "");
 
         transfer.setLoad_start_at(TimeUtils.getLocalDateCurrentTime());
         transfer.setSub_status_tx(BaseConstants.TRANSFER.SUB_STATE.LOADING);

@@ -34,7 +34,8 @@ public class PositionChange extends GlobalWorkHandler {
         String robotId = eventInfo.getUserId();
         double x = message.getDouble("x");
         double y = message.getDouble("y");
-        double deg = message.getDouble("deg");
+        double deg = message.getDouble("theta");
+        double vel = message.optDouble("velocity", 0);
 
         if (Double.isNaN(x) || Double.isNaN(y)) {
             logger.warn("[{}] Invalid position data: x={}, y={}", robotId, x, y);

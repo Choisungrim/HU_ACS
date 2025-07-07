@@ -27,13 +27,13 @@ public class JobComplete extends GlobalWorkHandler {
 
         robot.setStatus_tx(BaseConstants.ROBOT.STATE.IDLE);
         robot.setTransfer_id("");
+        writerService.sendToUiRobotStateChange(eventInfo, result, robot, "", "");
         baseService.saveOrUpdate(eventInfo, robot);
 
         transfer.setTransfer_status_tx(BaseConstants.TRANSFER.STATE.COMPLETED);
         transfer.setSub_status_tx(BaseConstants.TRANSFER.STATE.COMPLETED);
         transfer.setJob_complete_at(TimeUtils.getLocalDateCurrentTime());
         baseService.saveOrUpdate(eventInfo, transfer);
-
         baseService.delete(eventInfo, transfer);
 
         logger.info("Job complete succesful");

@@ -35,7 +35,11 @@ public class MoveStart extends GlobalWorkHandler {
         //상태 업데이트
         robot.setStatus_tx(BaseConstants.ROBOT.STATE.RUNNING);
         baseService.saveOrUpdate(eventInfo,robot);
-        
+        if(CommonUtils.isNullOrEmpty(transfer.getLoad_end_at()))
+            writerService.sendToUiRobotStateChange(eventInfo, result, robot, transfer.getSource_port_id(), ""); // 적재 전
+        else
+            writerService.sendToUiRobotStateChange(eventInfo, result, robot, transfer.getDestination_port_id(), transfer.getCarrier_id()); //적재 후
+
         //작업 세부상태 업데이트
         transfer.setSub_status_tx(BaseConstants.TRANSFER.SUB_STATE.RUNNING);
         baseService.saveOrUpdate(eventInfo,transfer);

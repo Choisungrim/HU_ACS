@@ -63,6 +63,8 @@ public class UnloadComplete extends GlobalWorkHandler {
         transfer.setUnload_end_at(TimeUtils.getLocalDateCurrentTime());
         transfer.setSub_status_tx(BaseConstants.TRANSFER.SUB_STATE.UNLOAD_COMPLETE);
         baseService.saveOrUpdate(eventInfo,transfer);
+
+        writerService.sendToUiRobotStateChange(eventInfo, result, robot, transfer.getSource_port_id(), "");
         return result;
     }
 

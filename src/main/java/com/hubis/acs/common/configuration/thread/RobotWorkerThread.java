@@ -3,6 +3,7 @@ package com.hubis.acs.common.configuration.thread;
 import com.hubis.acs.common.cache.MqttCache;
 import com.hubis.acs.common.entity.vo.EventInfo;
 import com.hubis.acs.common.handler.BaseExecutorHandler;
+import com.hubis.acs.common.utils.CommonUtils;
 import com.hubis.acs.common.utils.EventInfoBuilder;
 import com.hubis.acs.common.utils.JsonUtils;
 import com.hubis.acs.common.utils.TimeUtils;
@@ -90,6 +91,9 @@ public class RobotWorkerThread implements Runnable {
         String behavior = reqMsg.optString("task_behavior", "unknown");
         String status = reqMsg.optString("task_status", "unknown");
         String transactionId = reqMsg.optString("tid", TimeUtils.getCurrentTimekey());
+
+        if(CommonUtils.isNullOrEmpty(behavior))
+            return;
 
         String workId;
         if ("running".equalsIgnoreCase(status)) {

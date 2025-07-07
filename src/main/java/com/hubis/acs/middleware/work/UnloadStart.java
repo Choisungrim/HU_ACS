@@ -35,6 +35,7 @@ public class UnloadStart extends GlobalWorkHandler {
         //상태 업데이트
         robot.setStatus_tx(BaseConstants.ROBOT.STATE.UNLOADING);
         baseService.saveOrUpdate(eventInfo,robot);
+        writerService.sendToUiRobotStateChange(eventInfo, result, robot, transfer.getSource_port_id(), transfer.getCarrier_id());
 
         transfer.setUnload_start_at(TimeUtils.getLocalDateCurrentTime());
         transfer.setSub_status_tx(BaseConstants.TRANSFER.SUB_STATE.UNLOADING);

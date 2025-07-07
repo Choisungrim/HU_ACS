@@ -21,7 +21,7 @@ public class BatteryChange extends GlobalWorkHandler {
         double soc = message.optDouble("soc");
 
         RobotMaster robot = baseService.findById(RobotMaster.class, new RobotMasterId(robotId,siteId));
-        if(CommonUtils.isNullOrEmpty(robot))
+        if(!CommonUtils.isNullOrEmpty(robot))
         {
             robot.setBattery_no(soc);
             baseService.saveOrUpdate(eventInfo, robot);

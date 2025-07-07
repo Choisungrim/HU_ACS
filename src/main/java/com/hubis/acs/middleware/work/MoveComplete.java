@@ -124,6 +124,8 @@ public class MoveComplete extends GlobalWorkHandler {
         // 3. DB 반영
         baseService.update(eventInfo, robot);
 
+        writerService.sendToUiLocationChange(eventInfo, result, targetNode.getNode_nm());
+
         logger.info("MoveComplete 성공: Robot {} 위치 = ({}, {}), node = {}",
                 robot.getRobot_id(), robotPos.getX(), robotPos.getY(), targetNode.getNode_id());
     }

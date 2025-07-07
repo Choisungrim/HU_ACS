@@ -66,6 +66,9 @@ public class LoadComplete extends GlobalWorkHandler {
         transfer.setLoad_end_at(TimeUtils.getLocalDateCurrentTime());
         transfer.setSub_status_tx(BaseConstants.TRANSFER.SUB_STATE.LOAD_COMPLETE);
         baseService.saveOrUpdate(eventInfo,transfer);
+
+        writerService.sendToUiRobotStateChange(eventInfo, result, robot, transfer.getSource_port_id(), transfer.getCarrier_id());
+
         return result;
     }
 
