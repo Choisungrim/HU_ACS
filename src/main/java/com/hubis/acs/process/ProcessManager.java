@@ -31,6 +31,7 @@ public class ProcessManager {
     private final WriterService writerService;
     private final BaseService baseService;
     private final BaseExecutorHandler executor;
+
     private final Map<String, ExecutorService> robotExecutors = new ConcurrentHashMap<>();
     private final Map<String, ProcessFlowContext> processMap = new ConcurrentHashMap<>();
     private final Map<String, EventInfo> eventInfoMap = new ConcurrentHashMap<>();
@@ -62,32 +63,53 @@ public class ProcessManager {
             handleProcessComplete(ctx, siteId);
 
             logger.info("Process {} completed for robot {}", ctx.getProcessId(), ctx.getRobotId());
-        } catch (Exception e) {
-            logger.error("Error in process {}: {}", ctx.getProcessId(), e.getMessage(), e);
-        } finally {
+
             processMap.remove(ctx.getProcessId());
             runningRobots.remove(ctx.getRobotId());
+
+        } catch (Exception e) {
+            logger.error("Error in process {}: {}", ctx.getProcessId(), e.getMessage(), e);
         }
     }
 
     private void executeWithRetry(Runnable taskAction, String taskName, ProcessFlowContext ctx, String siteId) {
         int retryCount = 0;
-        while (retryCount < MAX_RETRY) {
-            try {
-                taskAction.run();
-                return;
-            } catch (Exception e) {
-                retryCount++;
-                logger.warn("Retry {} for task {} on process {}", retryCount, taskName, ctx.getProcessId());
+
+        // SOURCE_MOVE는 제한된 횟수만 시도
+        if (taskName.equalsIgnoreCase(BaseConstants.ROBOT.Task.SOURCE_MOVE)) {
+            while (retryCount < MAX_RETRY) {
+                try {
+                    taskAction.run();
+                    return;
+                } catch (Exception e) {
+                    retryCount++;
+                    logger.warn("Retry {} for task {} on process {}", retryCount, taskName, ctx.getProcessId());
+                }
+            }
+
+            // 실패 처리 후 예외 던짐
+            handleTaskFailure(ctx, taskName, siteId);
+            throw new RuntimeException("Max retries exceeded for task: " + taskName);
+        }
+        // 그 외의 task는 무한 재시도
+        else {
+            while (true) {
+                try {
+                    taskAction.run();
+                    return;
+                } catch (Exception e) {
+                    retryCount++;
+                    logger.warn("Retry {} for task {} on process {} (unlimited retry)", retryCount, taskName, ctx.getProcessId());
+                    try {
+                        Thread.sleep(2000); // 재시도 간격 (2초 예시)
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        logger.error("Retry sleep interrupted for task {}", taskName);
+                        break;
+                    }
+                }
             }
         }
-        if(taskName.equalsIgnoreCase(BaseConstants.ROBOT.Task.SOURCE_MOVE))
-            handleTaskFailure(ctx, taskName, siteId);
-        
-        
-        //응답 실패 시 작업 취소 메뉴얼 고려
-        throw new RuntimeException("Max retries exceeded for task: " + taskName);
-
     }
 
     public void moveTask(ProcessFlowContext ctx, String txId, String destination) {

@@ -58,12 +58,6 @@ public class TransferTaskScheduler {
                     System.out.println("▶▶ Site "+siteCd+"점유된 Zone 없음");
                 }
 
-                Map<String, Map<String, Object>> cache = mqttCache.getMqttCacheInfo();
-                for (String robotId : cache.keySet()) {
-                    Map<String, Object> fields = cache.get(robotId);
-                    System.out.println("Robot ID: " + robotId + ", Fields: " + fields);
-                }
-
             } catch (Exception e) {
                 logger.error("[{}] 작업 할당 실패", siteCd, e);
             }

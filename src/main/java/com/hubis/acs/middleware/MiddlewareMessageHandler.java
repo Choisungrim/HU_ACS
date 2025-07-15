@@ -3,6 +3,7 @@ package com.hubis.acs.middleware;
 import com.hubis.acs.common.cache.MqttCache;
 import com.hubis.acs.common.configuration.thread.RobotWorkerThread;
 import com.hubis.acs.common.handler.BaseExecutorHandler;
+import com.hubis.acs.common.utils.CommonUtils;
 import com.hubis.acs.common.utils.JsonUtils;
 import com.hubis.acs.process.ProcessNotifyService;
 import com.hubis.acs.service.RobotService;
@@ -61,8 +62,9 @@ public class MiddlewareMessageHandler {
 
             String tid = reqMsg.optString("tid");
             String sentTid = (String) vehicleInfo.getOrDefault("heartbeat_tid", tid);
-
-            long rtt = calculate(sentTid, tid);
+            long rtt = 0;
+            if(tid != null && !sentTid.equals(tid))
+               rtt = calculate(sentTid, tid);
 
             String siteId = (String)vehicleInfo.getOrDefault("siteId","HU");
 
@@ -80,7 +82,8 @@ public class MiddlewareMessageHandler {
     private void processMiddleWareMessages(Message<?> message, String robotId)
     {
         logger.info("received : {}",message.getPayload());
-        mqttCache.addMqttVehicleQueue(robotId, message);
+        if(!CommonUtils.isNullOrEmpty(message.getPayload()))
+            mqttCache.addMqttVehicleQueue(robotId, message);
 
         handleMessageStartWorker(robotId);
 

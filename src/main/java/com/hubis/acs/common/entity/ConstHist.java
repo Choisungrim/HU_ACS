@@ -22,6 +22,8 @@ public class ConstHist extends BaseEntity {
     private String constant_nm; // 상수 명칭
 
     private String constant_val; // 상수 값
+    
+    private String unit_tx; //단위
 
     private String site_cd; // SITE 정보
 

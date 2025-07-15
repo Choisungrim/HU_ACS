@@ -25,6 +25,11 @@ bootRun {
 	]
 }
 
+springBoot {
+	mainClass = 'com.hubis.acs.DemoApplication'
+}
+
+
 repositories {
 	mavenCentral()
 	mavenLocal()

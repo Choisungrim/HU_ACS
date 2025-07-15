@@ -49,28 +49,29 @@ public class MoveComplete extends GlobalWorkHandler {
         Position sourcePos = new Position(ConvertUtils.toDouble(sourceNode.getPos_x_val()), ConvertUtils.toDouble(sourceNode.getPos_y_val()));
         Position destPos = new Position(ConvertUtils.toDouble(destNode.getPos_x_val()), ConvertUtils.toDouble(destNode.getPos_y_val()));
 
-        //로봇의 현재 position과 source, dest Node 비교 후 Loading, Unloading 상태변경
+        //로봇의 현재 position과 source, dest Node 비교 후 const로 정의한 오차범위보다 크면 실패처리, Loading, Unloading 상태변경
         double POSITION_TOLERANCE = ConvertUtils.toDouble(baseConstantCache.get(siteId, BaseConstants.ConstantsCache.ConstType.SYSTEM, BaseConstants.ConstantsCache.ConstCode.POSITION_TOLERANCE).getConstant_val());
 
         boolean isLoadingAt = CommonUtils.isNullOrEmpty(transfer.getLoad_end_at());
         if(isLoadingAt)
         {
-            if(!isWithinTolerance(robotPos.getX(), robotPos.getY(), sourcePos.getX(), sourcePos.getY(), POSITION_TOLERANCE))
+            if(isOverTolerance(robotPos.getX(), robotPos.getY(), sourcePos.getX(), sourcePos.getY(), POSITION_TOLERANCE))
             {
-                logger.error("MoveComplete Source 검증 실패: Robot {} 위치 mismatch! 현재 pos=({}, {}), source=({}, {})",
-                        robotId, robotPos.getX(), robotPos.getY(), sourcePos.getX(), sourcePos.getY());
+                logger.info("MoveComplete Source 검증 실패: Transfer [{}], Robot [{}] 위치 mismatch! 현재 pos=({}, {}), source=({}, {})",
+                        transfer.getTransfer_id(), robotId, robotPos.getX(), robotPos.getY(), sourcePos.getX(), sourcePos.getY());
                 return BaseConstants.RETURNCODE.Fail;
             }
             updateRobotLocation(robot, sourceNode, robotPos);
         }
         else if(!isLoadingAt)
         {
-            if (!isWithinTolerance(robotPos.getX(), robotPos.getY(), destPos.getX(), destPos.getY(), POSITION_TOLERANCE))
+            if (isOverTolerance(robotPos.getX(), robotPos.getY(), destPos.getX(), destPos.getY(), POSITION_TOLERANCE))
             {
-                logger.error("MoveComplete Destination 검증 실패: Robot {} 위치 mismatch! 현재 pos=({}, {}), dest=({}, {})",
-                        robotId, robotPos.getX(), robotPos.getY(), destPos.getX(), destPos.getY());
+                logger.info("MoveComplete Destination 검증실패 : Transfer [{}], Robot {} 위치 mismatch! 현재 pos=({}, {}), dest=({}, {})",
+                        transfer.getTransfer_id(), robotId, robotPos.getX(), robotPos.getY(), destPos.getX(), destPos.getY());
                 return BaseConstants.RETURNCODE.Fail;
             }
+
             updateRobotLocation(robot, destNode, robotPos);
         }
         else
@@ -91,12 +92,12 @@ public class MoveComplete extends GlobalWorkHandler {
         logger.info("updateTransfer : {} , subState: subState={} ",transfer.getTransfer_id(), subState);
     }
 
-    private boolean isWithinTolerance(double robotX, double robotY, double targetX, double targetY, double tolerance) {
+    private boolean isOverTolerance(double robotX, double robotY, double targetX, double targetY, double tolerance) {
         double deltaX = robotX - targetX;
         double deltaY = robotY - targetY;
         double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-        System.out.println(distance);
-        return distance <= tolerance;
+        logger.info("허용오차범위 : {:.2f}mm, 실제 오차 범위 : {:.2f}mm", tolerance, distance);
+        return distance > tolerance;
     }
 
     private void updateRobotLocation(RobotMaster robot, NodeMaster targetNode, Position robotPos)

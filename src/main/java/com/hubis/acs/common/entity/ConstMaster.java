@@ -24,6 +24,8 @@ public class ConstMaster extends BaseEntity {
 
     private String constant_val; // 상수 값
 
+    private String unit_tx; // 단위
+
     @Id
     private String site_cd; // SITE 정보
 
